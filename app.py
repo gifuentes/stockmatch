@@ -7,8 +7,13 @@
 # Tema: Álgebra Relacional aplicada a la identificación y
 # agrupación de registros duplicados.
 #
-# La parte visual usa Streamlit + estilos CSS.
-# La parte lógica está desarrollada en Python.
+# La aplicación está dividida en tres páginas:
+# 1. Inicio
+# 2. Configuración
+# 3. Análisis y reportes
+#
+# El objetivo es que el prototipo sea claro, formal y fácil
+# de defender oralmente.
 # ==========================================================
 
 import re
@@ -21,41 +26,27 @@ import streamlit as st
 
 
 # ==========================================================
-# 1. CONFIGURACIÓN GENERAL
+# 1. CONFIGURACIÓN GENERAL DE LA APP
 # ==========================================================
 
 st.set_page_config(
     page_title="StockMatch | Auditoría de Inventarios",
-    page_icon="📦",
+    page_icon="SM",
     layout="wide"
 )
 
 
 # ==========================================================
-# 2. DISEÑO VISUAL
+# 2. ESTILOS VISUALES GENERALES
 # ==========================================================
-# Este bloque solo mejora la apariencia de la página.
-# No afecta el modelo matemático ni el análisis de datos.
+# Este bloque solo cambia la apariencia.
+# La lógica matemática y computacional está en las funciones de Python.
 
 st.markdown(
     """
     <style>
-    :root {
-        --navy: #020B1F;
-        --navy-2: #061A33;
-        --navy-3: #0A2240;
-        --blue: #123E73;
-        --blue-soft: #EAF2FF;
-        --gray-bg: #F3F6FA;
-        --gray-text: #64748B;
-        --border: #D6E0EF;
-        --white: #FFFFFF;
-        --green: #0F766E;
-    }
-
     .stApp {
-        background: linear-gradient(180deg, #F3F6FA 0%, #EDF2F8 100%);
-        color: #172033;
+        background-color: #F4F7FB;
     }
 
     .block-container {
@@ -65,196 +56,30 @@ st.markdown(
     }
 
     html, body, [class*="css"] {
-        font-family: "Segoe UI", "Inter", Arial, sans-serif;
+        font-family: "Segoe UI", Arial, sans-serif;
+        color: #0F172A;
     }
 
-    h1, h2, h3 {
-        color: var(--navy);
-        font-weight: 800;
-    }
-
-    .hero {
-        background: radial-gradient(circle at 85% 20%, #1B4D89 0%, #061A33 38%, #020B1F 100%);
-        border-radius: 22px;
-        padding: 42px 46px;
-        color: white;
-        margin-bottom: 24px;
-        box-shadow: 0 18px 42px rgba(2, 11, 31, 0.25);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .hero-grid {
-        display: grid;
-        grid-template-columns: 1.5fr 0.8fr;
-        gap: 28px;
-        align-items: center;
-    }
-
-    .brand-pill {
-        display: inline-block;
-        background: rgba(255, 255, 255, 0.10);
-        border: 1px solid rgba(255, 255, 255, 0.22);
-        padding: 7px 13px;
-        border-radius: 999px;
-        color: #CFE3FF;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: .12em;
-        font-weight: 750;
-        margin-bottom: 16px;
-    }
-
-    .hero-title {
-        font-size: 48px;
-        font-weight: 900;
-        letter-spacing: -1.2px;
-        line-height: 1.05;
-        margin-bottom: 12px;
-    }
-
-    .hero-subtitle {
-        font-size: 21px;
-        line-height: 1.45;
-        color: #E6F0FF;
-        max-width: 760px;
-        margin-bottom: 18px;
-    }
-
-    .hero-text {
-        color: #BFD5F2;
-        font-size: 15px;
-        line-height: 1.7;
-        max-width: 820px;
-    }
-
-    .math-panel {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.18);
-        border-radius: 18px;
-        padding: 24px 22px;
-        text-align: center;
-        backdrop-filter: blur(8px);
-    }
-
-    .math-symbols {
-        font-size: 42px;
-        font-weight: 900;
-        color: #FFFFFF;
-        letter-spacing: 6px;
-        margin-bottom: 8px;
-    }
-
-    .math-caption {
-        color: #CFE3FF;
-        font-size: 13px;
-        line-height: 1.6;
-    }
-
-    .notice {
-        background: #FFFFFF;
-        border: 1px solid var(--border);
-        border-left: 6px solid var(--navy-3);
-        border-radius: 14px;
-        padding: 17px 19px;
-        margin-bottom: 22px;
-        box-shadow: 0 8px 22px rgba(10, 34, 64, 0.07);
-        line-height: 1.65;
-        color: #1E293B;
-    }
-
-    .section-card {
-        background: #FFFFFF;
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 24px 26px;
-        margin-bottom: 22px;
-        box-shadow: 0 10px 26px rgba(10, 34, 64, 0.07);
-    }
-
-    .section-label {
-        color: var(--gray-text);
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: .12em;
-        font-weight: 800;
-        margin-bottom: 6px;
-    }
-
-    .section-title {
-        color: var(--navy);
-        font-size: 24px;
+    h1 {
+        color: #061A33;
+        font-size: 2.7rem;
         font-weight: 850;
-        margin-bottom: 10px;
+        letter-spacing: -0.04em;
     }
 
-    .section-desc {
-        color: #475569;
-        line-height: 1.65;
-        font-size: 15px;
-    }
-
-    .process-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 14px;
-        margin-top: 18px;
-    }
-
-    .process-step {
-        background: #F8FBFF;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 16px;
-        min-height: 132px;
-    }
-
-    .step-number {
-        background: var(--navy-3);
-        color: white;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+    h2 {
+        color: #061A33;
         font-weight: 800;
-        margin-bottom: 10px;
+        letter-spacing: -0.03em;
     }
 
-    .step-title {
-        font-weight: 800;
-        color: var(--navy);
-        margin-bottom: 6px;
-        font-size: 14px;
-    }
-
-    .step-text {
-        color: #64748B;
-        font-size: 13px;
-        line-height: 1.55;
-    }
-
-    div[data-testid="stMetric"] {
-        background-color: #FFFFFF;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 18px 18px;
-        box-shadow: 0 8px 18px rgba(10, 34, 64, 0.07);
-    }
-
-    div[data-testid="stMetric"] label {
-        color: #64748B !important;
+    h3 {
+        color: #061A33;
         font-weight: 750;
-    }
-
-    div[data-testid="stMetric"] div {
-        color: var(--navy) !important;
-        font-weight: 850;
     }
 
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #020B1F 0%, #061A33 100%);
+        background-color: #020B1F;
     }
 
     [data-testid="stSidebar"] h1,
@@ -266,66 +91,58 @@ st.markdown(
         color: #F8FAFC !important;
     }
 
-    [data-testid="stSidebar"] .stCaptionContainer {
-        color: #CFE3FF !important;
+    div[data-testid="stMetric"] {
+        background-color: #FFFFFF;
+        border: 1px solid #D6E0EF;
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 6px 18px rgba(6, 26, 51, 0.06);
     }
 
-    .stDataFrame {
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        overflow: hidden;
+    div[data-testid="stMetric"] label {
+        color: #475569 !important;
+        font-weight: 700;
+    }
+
+    div[data-testid="stMetric"] div {
+        color: #061A33 !important;
+        font-weight: 850;
     }
 
     div.stButton > button {
-        background: linear-gradient(135deg, #020B1F, #0A2240);
+        background-color: #061A33;
         color: white;
-        border-radius: 10px;
+        border-radius: 9px;
         border: none;
-        font-weight: 800;
-        height: 46px;
-        letter-spacing: .02em;
+        font-weight: 750;
+        height: 45px;
     }
 
     div.stButton > button:hover {
-        background: linear-gradient(135deg, #0A2240, #123E73);
+        background-color: #0A2A52;
         color: white;
         border: none;
     }
 
     div.stDownloadButton > button {
-        background: #123E73;
+        background-color: #0A2A52;
         color: white;
-        border-radius: 10px;
+        border-radius: 9px;
         border: none;
-        font-weight: 800;
-        height: 45px;
+        font-weight: 750;
+        height: 44px;
     }
 
     div.stDownloadButton > button:hover {
-        background: #020B1F;
+        background-color: #061A33;
         color: white;
         border: none;
     }
 
-    .footer-note {
-        text-align: center;
-        color: #64748B;
-        font-size: 13px;
-        margin-top: 18px;
-    }
-
-    @media (max-width: 900px) {
-        .hero-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .process-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .hero-title {
-            font-size: 38px;
-        }
+    .stDataFrame {
+        border: 1px solid #D6E0EF;
+        border-radius: 12px;
+        overflow: hidden;
     }
     </style>
     """,
@@ -334,18 +151,23 @@ st.markdown(
 
 
 # ==========================================================
-# 3. NORMALIZACIÓN DE TEXTO
+# 3. FUNCIONES DE NORMALIZACIÓN Y SIMILITUD
 # ==========================================================
 
 def normalizar_texto(valor) -> str:
     """
-    Normaliza un texto para compararlo de manera justa.
+    Normaliza un texto para poder compararlo mejor.
 
     Ejemplo:
     "Coca-Cola 500 ML" se transforma en "coca cola 500 ml".
 
-    Esta etapa elimina diferencias superficiales:
-    mayúsculas, tildes, signos y espacios repetidos.
+    Esta etapa elimina diferencias superficiales como:
+    - Mayúsculas y minúsculas.
+    - Tildes.
+    - Signos de puntuación.
+    - Espacios repetidos.
+
+    No modifica el archivo original. Solo se usa para comparar.
     """
 
     if pd.isna(valor):
@@ -353,33 +175,34 @@ def normalizar_texto(valor) -> str:
 
     texto = str(valor).strip().lower()
 
-    # Quitar tildes y signos diacríticos.
+    # Quitar tildes.
     texto = unicodedata.normalize("NFD", texto)
     texto = "".join(
         caracter for caracter in texto
         if unicodedata.category(caracter) != "Mn"
     )
 
-    # Dejar solo letras, números y espacios.
+    # Dejar letras, números y espacios.
     texto = re.sub(r"[^a-z0-9\s]", " ", texto)
 
-    # Quitar espacios repetidos.
+    # Reducir espacios múltiples.
     texto = re.sub(r"\s+", " ", texto).strip()
 
     return texto
 
 
-def similitud_textual(texto_a, texto_b) -> float:
+def similitud_textual(valor_a, valor_b) -> float:
     """
     Calcula la similitud entre dos textos.
 
-    Se usa SequenceMatcher, una función de Python que compara dos
-    secuencias y devuelve un valor entre 0 y 1. Aquí se multiplica
-    por 100 para expresarlo como porcentaje.
+    Se usa SequenceMatcher, una herramienta de Python que compara
+    dos secuencias de texto y devuelve un valor entre 0 y 1.
+
+    En esta app se multiplica por 100 para mostrarlo como porcentaje.
     """
 
-    texto_a = normalizar_texto(texto_a)
-    texto_b = normalizar_texto(texto_b)
+    texto_a = normalizar_texto(valor_a)
+    texto_b = normalizar_texto(valor_b)
 
     if not texto_a and not texto_b:
         return 100.0
@@ -390,62 +213,71 @@ def similitud_textual(texto_a, texto_b) -> float:
     return round(SequenceMatcher(None, texto_a, texto_b).ratio() * 100, 2)
 
 
-# ==========================================================
-# 4. COMPARACIÓN ENTRE DOS REGISTROS
-# ==========================================================
-
 def comparar_dos_registros(fila_a, fila_b, columnas_comparacion):
     """
-    Compara dos registros usando las columnas seleccionadas.
+    Compara dos registros del inventario.
 
     Relación con Matemáticas Discretas:
-    Cada registro es un elemento del conjunto inventario.
-    Si dos registros superan el umbral de similitud, forman parte
-    de la relación de posible duplicidad.
+    cada registro es un elemento del conjunto inventario. Si dos
+    registros alcanzan el umbral, pasan a formar parte de la relación
+    de posible duplicidad.
+
+    Retorna:
+    - similitud promedio;
+    - motivo principal;
+    - detalle de similitud por campo.
     """
 
-    resultados = []
+    detalle = []
 
     for columna in columnas_comparacion:
         valor_a = fila_a[columna]
         valor_b = fila_b[columna]
+
         similitud = similitud_textual(valor_a, valor_b)
-        resultados.append((columna, similitud))
+
+        detalle.append({
+            "Campo comparado": columna,
+            "Valor en registro A": str(valor_a),
+            "Valor en registro B": str(valor_b),
+            "Similitud (%)": similitud
+        })
 
     similitud_promedio = round(
-        sum(sim for _, sim in resultados) / len(resultados),
+        sum(item["Similitud (%)"] for item in detalle) / len(detalle),
         2
     )
 
-    resultados_ordenados = sorted(
-        resultados,
-        key=lambda x: x[1],
+    detalle_ordenado = sorted(
+        detalle,
+        key=lambda item: item["Similitud (%)"],
         reverse=True
     )
 
-    mejores_campos = resultados_ordenados[:2]
+    mejores = detalle_ordenado[:2]
 
     motivo = "; ".join(
-        f"{columna}: {sim:.0f}%"
-        for columna, sim in mejores_campos
+        f"{item['Campo comparado']}: {item['Similitud (%)']:.0f}%"
+        for item in mejores
     )
 
-    return similitud_promedio, motivo
+    return similitud_promedio, motivo, pd.DataFrame(detalle)
 
 
 # ==========================================================
-# 5. AGRUPACIÓN POR TRANSITIVIDAD
+# 4. ESTRUCTURA PARA AGRUPAR POR TRANSITIVIDAD
 # ==========================================================
 
 class UnionFind:
     """
     Estructura de conjuntos disjuntos.
 
-    Sirve para agrupar registros relacionados directa o indirectamente.
+    Se usa para formar grupos de registros relacionados directa o
+    indirectamente.
 
-    Ejemplo:
-    Si A se relaciona con B, y B se relaciona con C,
-    entonces A, B y C quedan dentro del mismo grupo.
+    Interpretación matemática:
+    si A se relaciona con B, y B se relaciona con C, entonces A, B
+    y C deben quedar dentro del mismo grupo de revisión.
 
     Esto representa la transitividad dentro del prototipo.
     """
@@ -476,7 +308,7 @@ class UnionFind:
 
 
 # ==========================================================
-# 6. MOTOR PRINCIPAL DEL ANÁLISIS
+# 5. MOTOR PRINCIPAL DEL ANÁLISIS
 # ==========================================================
 
 def analizar_inventario(df, columna_id, columnas_comparacion, umbral):
@@ -486,99 +318,190 @@ def analizar_inventario(df, columna_id, columnas_comparacion, umbral):
     Etapas matemáticas:
 
     1. Conjunto:
-       El inventario completo se considera un conjunto de registros.
+       El inventario se toma como un conjunto de registros.
 
     2. Proyección:
-       Se seleccionan únicamente las columnas relevantes.
+       El usuario selecciona las columnas relevantes.
 
     3. Producto cartesiano:
-       Se comparan pares de registros. Computacionalmente se usa
-       combinations(), que evita pares repetidos.
+       El programa compara pares de registros. Para evitar repeticiones,
+       usa combinations(), es decir, compara (A, B), pero no repite (B, A).
 
     4. Selección:
-       Se conservan solo los pares cuya similitud es mayor o igual
-       al umbral elegido.
+       Se conservan solo los pares cuya similitud sea mayor o igual
+       al umbral definido.
 
     5. Transitividad:
-       Los registros relacionados se agrupan mediante Union-Find.
+       Los registros relacionados se agrupan mediante UnionFind.
 
     6. Reporte:
-       Se genera una salida para revisión humana.
+       Se generan tablas para revisión humana.
     """
 
-    indices = list(df.index)
+    df_trabajo = df.copy().reset_index(drop=True)
+    indices = list(df_trabajo.index)
+
     estructura_grupos = UnionFind(indices)
 
-    pares_detectados = []
+    pares_internos = []
+    detalles_por_par = {}
 
     for i, j in combinations(indices, 2):
 
-        similitud, motivo = comparar_dos_registros(
-            df.loc[i],
-            df.loc[j],
+        similitud, motivo, detalle = comparar_dos_registros(
+            df_trabajo.loc[i],
+            df_trabajo.loc[j],
             columnas_comparacion
         )
 
         if similitud >= umbral:
             estructura_grupos.unir(i, j)
 
-            pares_detectados.append({
-                "ID A": df.loc[i, columna_id],
-                "Registro A": df.loc[i, columnas_comparacion[0]],
-                "ID B": df.loc[j, columna_id],
-                "Registro B": df.loc[j, columnas_comparacion[0]],
-                "Similitud (%)": similitud,
+            pares_internos.append({
+                "_i": i,
+                "_j": j,
+                "ID A": df_trabajo.loc[i, columna_id],
+                "Registro A": df_trabajo.loc[i, columnas_comparacion[0]],
+                "ID B": df_trabajo.loc[j, columna_id],
+                "Registro B": df_trabajo.loc[j, columnas_comparacion[0]],
+                "Similitud promedio (%)": similitud,
                 "Motivo principal": motivo
             })
 
-    grupos = estructura_grupos.obtener_grupos()
-    grupos_validos = [grupo for grupo in grupos if len(grupo) > 1]
+            detalles_por_par[(i, j)] = detalle
 
-    reporte_grupos = []
+    grupos_crudos = estructura_grupos.obtener_grupos()
+    grupos_validos = sorted(
+        [sorted(grupo) for grupo in grupos_crudos if len(grupo) > 1],
+        key=lambda grupo: min(grupo)
+    )
 
-    for numero_grupo, grupo in enumerate(grupos_validos, start=1):
+    indice_a_grupo = {}
 
+    for numero, grupo in enumerate(grupos_validos, start=1):
+        for indice in grupo:
+            indice_a_grupo[indice] = numero
+
+    for par in pares_internos:
+        numero_grupo = indice_a_grupo.get(par["_i"], "")
+        par["Grupo"] = f"G-{numero_grupo}" if numero_grupo else ""
+
+    filas_grupos = []
+
+    for numero, grupo in enumerate(grupos_validos, start=1):
         ids = [
-            str(df.loc[indice, columna_id])
+            str(df_trabajo.loc[indice, columna_id])
             for indice in grupo
         ]
 
         registros = [
-            str(df.loc[indice, columnas_comparacion[0]])
+            str(df_trabajo.loc[indice, columnas_comparacion[0]])
             for indice in grupo
         ]
 
-        reporte_grupos.append({
-            "Grupo": f"G-{numero_grupo}",
+        filas_grupos.append({
+            "Grupo": f"G-{numero}",
             "Cantidad de registros": len(grupo),
             "IDs relacionados": ", ".join(ids),
             "Registros relacionados": " | ".join(registros),
             "Acción sugerida": "Revisar antes de unificar"
         })
 
+    tabla_pares_interna = pd.DataFrame(pares_internos)
+    tabla_grupos = pd.DataFrame(filas_grupos)
+
+    if not tabla_pares_interna.empty:
+        tabla_pares = tabla_pares_interna[
+            [
+                "Grupo",
+                "ID A",
+                "Registro A",
+                "ID B",
+                "Registro B",
+                "Similitud promedio (%)",
+                "Motivo principal"
+            ]
+        ].copy()
+    else:
+        tabla_pares = pd.DataFrame(
+            columns=[
+                "Grupo",
+                "ID A",
+                "Registro A",
+                "ID B",
+                "Registro B",
+                "Similitud promedio (%)",
+                "Motivo principal"
+            ]
+        )
+
+    # Reporte completo: conserva todos los registros del archivo.
+    reporte_completo = df_trabajo.copy()
+
+    grupos_sugeridos = []
+    similitud_maxima = []
+    coincidencias = []
+
+    for indice in indices:
+        grupo = indice_a_grupo.get(indice, "")
+        grupos_sugeridos.append(f"G-{grupo}" if grupo else "")
+
+        sims = []
+        coincidentes = []
+
+        for par in pares_internos:
+            if par["_i"] == indice:
+                sims.append(par["Similitud promedio (%)"])
+                coincidentes.append(
+                    f"{par['ID B']} ({par['Similitud promedio (%)']}%)"
+                )
+            elif par["_j"] == indice:
+                sims.append(par["Similitud promedio (%)"])
+                coincidentes.append(
+                    f"{par['ID A']} ({par['Similitud promedio (%)']}%)"
+                )
+
+        similitud_maxima.append(max(sims) if sims else "")
+        coincidencias.append("; ".join(coincidentes))
+
+    reporte_completo.insert(0, "Grupo sugerido", grupos_sugeridos)
+    reporte_completo["Similitud máxima (%)"] = similitud_maxima
+    reporte_completo["Coincidencias detectadas"] = coincidencias
+    reporte_completo["Acción sugerida"] = reporte_completo["Grupo sugerido"].apply(
+        lambda grupo: "Revisar posible duplicado" if grupo else "Sin coincidencias detectadas"
+    )
+
     resumen = {
-        "registros": len(df),
-        "pares_comparados": len(df) * (len(df) - 1) // 2,
-        "pares_detectados": len(pares_detectados),
-        "grupos_detectados": len(reporte_grupos)
+        "registros": len(df_trabajo),
+        "columnas": len(df_trabajo.columns),
+        "pares_comparados": len(df_trabajo) * (len(df_trabajo) - 1) // 2,
+        "pares_detectados": len(tabla_pares),
+        "grupos_detectados": len(tabla_grupos)
     }
 
-    tabla_pares = pd.DataFrame(pares_detectados)
-    tabla_grupos = pd.DataFrame(reporte_grupos)
-
-    return resumen, tabla_pares, tabla_grupos
+    return {
+        "resumen": resumen,
+        "tabla_pares": tabla_pares,
+        "tabla_pares_interna": tabla_pares_interna,
+        "tabla_grupos": tabla_grupos,
+        "reporte_completo": reporte_completo,
+        "detalles_por_par": detalles_por_par,
+        "indice_a_grupo": indice_a_grupo,
+        "grupos_validos": grupos_validos,
+        "df_trabajo": df_trabajo
+    }
 
 
 # ==========================================================
-# 7. LECTURA DE ARCHIVOS
+# 6. LECTURA DE CSV Y DATOS DE EJEMPLO
 # ==========================================================
 
 def leer_csv(archivo):
     """
     Lee un archivo CSV cargado por el usuario.
 
-    Primero intenta leerlo como UTF-8. Si falla, intenta Latin-1.
-    Esto ayuda cuando el archivo fue exportado desde Excel.
+    Primero intenta leer en UTF-8. Si el archivo viene de Excel y
+    presenta problemas de codificación, intenta leerlo como Latin-1.
     """
 
     try:
@@ -591,8 +514,8 @@ def leer_csv(archivo):
 
 def inventario_ejemplo():
     """
-    Inventario de prueba para demostrar el funcionamiento del prototipo.
-    La aplicación también acepta cualquier CSV cargado por el usuario.
+    Inventario de prueba para usar en la exposición.
+    La app también recibe cualquier CSV cargado por el usuario.
     """
 
     return pd.DataFrame({
@@ -647,15 +570,10 @@ def inventario_ejemplo():
 
 
 # ==========================================================
-# 8. TABLAS DE APOYO PARA LA DEFENSA
+# 7. TABLAS DE APOYO PARA DEFENSA
 # ==========================================================
 
 def tabla_matematica():
-    """
-    Tabla para explicar cómo cada concepto de Matemáticas Discretas
-    se aplica dentro del prototipo.
-    """
-
     return pd.DataFrame({
         "Concepto": [
             "Conjunto",
@@ -671,43 +589,35 @@ def tabla_matematica():
             "El inventario completo cargado desde el archivo CSV.",
             "Cada fila o registro del inventario.",
             "Selección de columnas relevantes para comparar.",
-            "Comparación entre pares de registros del inventario.",
+            "Comparación entre pares únicos de registros.",
             "Filtro de pares que superan el umbral de similitud.",
             "Par de registros considerado como posible coincidencia.",
-            "Agrupación de registros conectados directa o indirectamente.",
+            "Agrupación de registros relacionados directa o indirectamente.",
             "Grupo de registros que podrían representar el mismo producto."
         ]
     })
 
 
 def tabla_guia_defensa():
-    """
-    Preguntas probables y respuestas breves para apoyar la defensa.
-    """
-
     return pd.DataFrame({
         "Pregunta posible": [
-            "¿Dónde aparece el álgebra relacional?",
+            "¿Dónde se aplica el álgebra relacional?",
             "¿Qué representa el producto cartesiano?",
-            "¿Qué hace el umbral?",
+            "¿Qué significa el umbral?",
             "¿Por qué no se eliminan registros automáticamente?",
             "¿Dónde se observa la transitividad?"
         ],
         "Respuesta sugerida": [
             "En la proyección de columnas, comparación de pares y selección por condición.",
-            "La comparación de pares de registros del inventario.",
-            "Define qué pares tienen similitud suficiente para entrar a la relación.",
-            "Porque pueden existir falsos positivos y la decisión debe ser humana.",
-            "En la agrupación: si A se relaciona con B y B con C, quedan en el mismo grupo."
+            "La comparación entre pares únicos de registros del inventario.",
+            "Es la condición mínima de similitud para aceptar un par como posible duplicado.",
+            "Porque una coincidencia alta puede ser un falso positivo y debe revisarse manualmente.",
+            "En la formación de grupos: si A se relaciona con B y B con C, quedan en el mismo grupo."
         ]
     })
 
 
 def sugerir_columna_id(columnas):
-    """
-    Sugiere una columna identificadora si encuentra nombres comunes.
-    """
-
     nombres_normalizados = {
         columna: normalizar_texto(columna)
         for columna in columnas
@@ -723,10 +633,6 @@ def sugerir_columna_id(columnas):
 
 
 def sugerir_columnas_comparacion(columnas, columna_id):
-    """
-    Sugiere columnas útiles para comparar productos.
-    """
-
     palabras_clave = [
         "nombre",
         "producto",
@@ -750,251 +656,150 @@ def sugerir_columnas_comparacion(columnas, columna_id):
     if sugeridas:
         return sugeridas
 
-    return [col for col in columnas if col != columna_id][:3]
+    return [columna for columna in columnas if columna != columna_id][:3]
 
 
 # ==========================================================
-# 9. ENCABEZADO PRINCIPAL
+# 8. NAVEGACIÓN
 # ==========================================================
 
-st.markdown(
-    """
-    <div class="hero">
-        <div class="hero-grid">
-            <div>
-                <div class="brand-pill">Auditoría de inventarios · Matemáticas Discretas</div>
-                <div class="hero-title">StockMatch</div>
-                <div class="hero-subtitle">
-                    Detección y agrupación de posibles registros duplicados
-                    en inventarios no estructurados.
-                </div>
-                <div class="hero-text">
-                    Prototipo basado en álgebra relacional, comparación de similitud
-                    y propiedades de relaciones. La herramienta identifica coincidencias
-                    probables, forma grupos de revisión y conserva siempre el control humano
-                    sobre la decisión final.
-                </div>
-            </div>
-            <div class="math-panel">
-                <div class="math-symbols">π × σ</div>
-                <div class="math-caption">
-                    Proyección de atributos<br>
-                    Comparación de pares<br>
-                    Selección por umbral
-                </div>
-            </div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+if "pagina" not in st.session_state:
+    st.session_state["pagina"] = "Inicio"
 
-st.markdown(
-    """
-    <div class="notice">
-        <strong>Principio de seguridad y responsabilidad:</strong>
-        StockMatch no elimina ni modifica el archivo original. El sistema genera
-        reportes de posibles coincidencias para que el responsable del inventario
-        revise cada caso antes de tomar una decisión.
-    </div>
-    """,
-    unsafe_allow_html=True
+st.sidebar.title("StockMatch")
+st.sidebar.caption("Auditoría de inventarios")
+
+pagina = st.sidebar.radio(
+    "Navegación",
+    ["Inicio", "Configuración", "Análisis y reportes"],
+    key="pagina"
 )
 
 
 # ==========================================================
-# 10. MAPA DEL PROCESO
+# 9. PÁGINA DE INICIO
 # ==========================================================
 
-st.markdown(
-    """
-    <div class="section-card">
-        <div class="section-label">Flujo del prototipo</div>
-        <div class="section-title">Proceso de análisis</div>
-        <div class="section-desc">
-            La aplicación sigue un flujo simple y defendible: carga de datos,
-            selección de columnas, comparación de registros, filtro por umbral
-            y agrupación de posibles coincidencias.
-        </div>
+def pagina_inicio():
+    st.title("StockMatch")
+    st.subheader("Auditoría de inventarios no estructurados")
 
-        <div class="process-grid">
-            <div class="process-step">
-                <div class="step-number">1</div>
-                <div class="step-title">Carga CSV</div>
-                <div class="step-text">El inventario se carga como conjunto de registros.</div>
-            </div>
-            <div class="process-step">
-                <div class="step-number">2</div>
-                <div class="step-title">Proyección</div>
-                <div class="step-text">Se eligen las columnas relevantes para comparar.</div>
-            </div>
-            <div class="process-step">
-                <div class="step-number">3</div>
-                <div class="step-title">Comparación</div>
-                <div class="step-text">Se comparan pares únicos de registros.</div>
-            </div>
-            <div class="process-step">
-                <div class="step-number">4</div>
-                <div class="step-title">Selección</div>
-                <div class="step-text">Se conservan pares que superan el umbral.</div>
-            </div>
-            <div class="process-step">
-                <div class="step-number">5</div>
-                <div class="step-title">Agrupación</div>
-                <div class="step-text">Los registros relacionados forman grupos de revisión.</div>
-            </div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-
-# ==========================================================
-# 11. BARRA LATERAL
-# ==========================================================
-
-st.sidebar.title("Configuración")
-st.sidebar.write("Carga el inventario y ajusta el modelo de comparación.")
-
-usar_ejemplo = st.sidebar.checkbox(
-    "Usar inventario de ejemplo",
-    value=False
-)
-
-archivo = None
-
-if not usar_ejemplo:
-    archivo = st.sidebar.file_uploader(
-        "Subir archivo CSV",
-        type=["csv"]
+    st.write(
+        "Prototipo académico para identificar y agrupar posibles registros "
+        "duplicados en inventarios, aplicando álgebra relacional y propiedades "
+        "de relaciones."
     )
 
+    col1, col2 = st.columns([1.45, 1])
 
-# ==========================================================
-# 12. CARGA DE DATOS
-# ==========================================================
+    with col1:
+        with st.container(border=True):
+            st.markdown("### Enfoque del sistema")
+            st.write(
+                "StockMatch no modifica el inventario original. La aplicación "
+                "analiza los registros, detecta posibles coincidencias y genera "
+                "reportes para revisión humana."
+            )
 
-if usar_ejemplo:
-    df = inventario_ejemplo()
-elif archivo is not None:
-    df = leer_csv(archivo)
-else:
-    st.warning(
-        "Para iniciar, sube un archivo CSV desde la barra lateral "
-        "o activa el inventario de ejemplo."
-    )
+            st.markdown("**Operaciones principales del modelo:**")
+            st.write("π Proyección de columnas")
+            st.write("× Comparación de pares únicos")
+            st.write("σ Selección por umbral de similitud")
+            st.write("Transitividad para agrupar registros relacionados")
 
-    with st.expander("Ver relación del prototipo con Matemáticas Discretas"):
+    with col2:
+        with st.container(border=True):
+            st.markdown("### Criterios de diseño")
+            st.metric("Datos modificados", "0")
+            st.metric("Control humano", "100%")
+            st.metric("Salida principal", "Reporte CSV")
+
+    st.divider()
+
+    st.markdown("## Flujo de trabajo")
+
+    paso1, paso2, paso3, paso4 = st.columns(4)
+
+    with paso1:
+        with st.container(border=True):
+            st.markdown("#### 1. Carga")
+            st.write("El usuario sube un archivo CSV de inventario.")
+
+    with paso2:
+        with st.container(border=True):
+            st.markdown("#### 2. Proyección")
+            st.write("Se seleccionan las columnas relevantes para comparar.")
+
+    with paso3:
+        with st.container(border=True):
+            st.markdown("#### 3. Relación")
+            st.write("Se comparan pares de registros y se aplica un umbral.")
+
+    with paso4:
+        with st.container(border=True):
+            st.markdown("#### 4. Reporte")
+            st.write("Se generan grupos de revisión y archivos descargables.")
+
+    st.divider()
+
+    with st.container(border=True):
+        st.markdown("### Relación con Matemáticas Discretas")
         st.dataframe(
             tabla_matematica(),
             use_container_width=True,
             hide_index=True
         )
 
-    st.stop()
-
-
-if df.empty:
-    st.error("El archivo cargado no contiene registros.")
-    st.stop()
-
-
-columnas = list(df.columns)
-
-st.success(
-    f"Inventario cargado correctamente: {len(df)} registros "
-    f"y {len(columnas)} columnas."
-)
+    if st.button("Ir a configuración", use_container_width=True):
+        st.session_state["pagina"] = "Configuración"
+        st.rerun()
 
 
 # ==========================================================
-# 13. CONFIGURACIÓN DEL MODELO
+# 10. PÁGINA DE CONFIGURACIÓN
 # ==========================================================
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("Modelo de comparación")
-
-indice_id = sugerir_columna_id(columnas)
-
-columna_id = st.sidebar.selectbox(
-    "Columna identificadora",
-    columnas,
-    index=indice_id
-)
-
-columnas_disponibles = [
-    columna for columna in columnas
-    if columna != columna_id
-]
-
-columnas_sugeridas = sugerir_columnas_comparacion(
-    columnas,
-    columna_id
-)
-
-columnas_comparacion = st.sidebar.multiselect(
-    "Columnas para comparar",
-    columnas_disponibles,
-    default=columnas_sugeridas
-)
-
-umbral = st.sidebar.slider(
-    "Umbral mínimo de similitud (%)",
-    min_value=50,
-    max_value=100,
-    value=82,
-    step=1
-)
-
-st.sidebar.caption(
-    "Un umbral alto exige mayor similitud. Un umbral bajo detecta más posibles coincidencias, pero puede generar falsos positivos."
-)
-
-if not columnas_comparacion:
-    st.error("Selecciona al menos una columna para comparar.")
-    st.stop()
-
-
-# ==========================================================
-# 14. PESTAÑAS PRINCIPALES
-# ==========================================================
-
-tab_inicio, tab_modelo, tab_defensa = st.tabs(
-    [
-        "Panel de análisis",
-        "Modelo matemático",
-        "Guía de defensa"
-    ]
-)
-
-
-with tab_inicio:
-
-    st.markdown(
-        """
-        <div class="section-card">
-            <div class="section-label">Datos cargados</div>
-            <div class="section-title">Resumen del inventario</div>
-            <div class="section-desc">
-                Antes de ejecutar el análisis, verifica que el archivo y las columnas
-                seleccionadas correspondan al inventario que deseas revisar.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
+def pagina_configuracion():
+    st.title("Configuración del análisis")
+    st.write(
+        "En esta sección se carga el inventario y se definen los parámetros "
+        "del modelo de comparación."
     )
 
-    c1, c2, c3 = st.columns(3)
+    with st.container(border=True):
+        st.markdown("### 1. Carga del archivo")
 
-    with c1:
-        st.metric("Registros cargados", len(df))
+        usar_ejemplo = st.checkbox(
+            "Usar inventario de ejemplo",
+            value=False
+        )
 
-    with c2:
-        st.metric("Columnas disponibles", len(columnas))
+        archivo = None
 
-    with c3:
-        st.metric("Umbral seleccionado", f"{umbral}%")
+        if not usar_ejemplo:
+            archivo = st.file_uploader(
+                "Subir archivo CSV",
+                type=["csv"]
+            )
+
+        if usar_ejemplo:
+            df = inventario_ejemplo()
+        elif archivo is not None:
+            df = leer_csv(archivo)
+        else:
+            st.info("Sube un archivo CSV o activa el inventario de ejemplo.")
+            return
+
+    if df.empty:
+        st.error("El archivo cargado no contiene registros.")
+        return
+
+    columnas = list(df.columns)
+
+    st.success(
+        f"Inventario cargado correctamente: {len(df)} registros y "
+        f"{len(columnas)} columnas."
+    )
 
     with st.expander("Vista previa del inventario", expanded=False):
         st.dataframe(
@@ -1003,241 +808,347 @@ with tab_inicio:
             hide_index=True
         )
 
-    st.markdown("### Configuración seleccionada")
+    with st.container(border=True):
+        st.markdown("### 2. Parámetros del modelo")
 
-    conf1, conf2 = st.columns(2)
+        col_a, col_b = st.columns(2)
 
-    with conf1:
-        st.write("**Columna identificadora:**", columna_id)
+        with col_a:
+            indice_id = sugerir_columna_id(columnas)
 
-    with conf2:
-        st.write("**Columnas comparadas:**", ", ".join(columnas_comparacion))
-
-    st.write(
-        "Los pares comparados se calculan con la fórmula "
-        "**n(n−1)/2**, porque se comparan pares únicos sin repetir el orden."
-    )
-
-    ejecutar = st.button("Ejecutar análisis", use_container_width=True)
-
-    if ejecutar:
-
-        resumen, tabla_pares, tabla_grupos = analizar_inventario(
-            df=df,
-            columna_id=columna_id,
-            columnas_comparacion=columnas_comparacion,
-            umbral=umbral
-        )
-
-        st.markdown("## Resultados del análisis")
-
-        m1, m2, m3, m4 = st.columns(4)
-
-        with m1:
-            st.metric("Registros analizados", resumen["registros"])
-
-        with m2:
-            st.metric("Pares comparados", resumen["pares_comparados"])
-
-        with m3:
-            st.metric("Pares seleccionados", resumen["pares_detectados"])
-
-        with m4:
-            st.metric("Grupos detectados", resumen["grupos_detectados"])
-
-        if resumen["pares_comparados"] > 0:
-            chart_data = pd.DataFrame({
-                "Categoría": [
-                    "Pares comparados",
-                    "Pares seleccionados",
-                    "Grupos detectados"
-                ],
-                "Cantidad": [
-                    resumen["pares_comparados"],
-                    resumen["pares_detectados"],
-                    resumen["grupos_detectados"]
-                ]
-            }).set_index("Categoría")
-
-            st.markdown("### Visualización ejecutiva del resultado")
-            st.bar_chart(chart_data)
-
-        resultado_tab1, resultado_tab2, resultado_tab3 = st.tabs(
-            [
-                "Pares relacionados",
-                "Grupos de revisión",
-                "Descargas"
-            ]
-        )
-
-        with resultado_tab1:
-            st.subheader("Pares que cumplen el criterio de selección")
-
-            if tabla_pares.empty:
-                st.warning(
-                    "No se detectaron pares de registros con el umbral seleccionado."
-                )
-            else:
-                st.dataframe(
-                    tabla_pares,
-                    use_container_width=True,
-                    hide_index=True
-                )
-
-        with resultado_tab2:
-            st.subheader("Grupos de posibles coincidencias")
-
-            if tabla_grupos.empty:
-                st.info("No se formaron grupos de revisión.")
-            else:
-                st.dataframe(
-                    tabla_grupos,
-                    use_container_width=True,
-                    hide_index=True
-                )
-
-            st.info(
-                "Estos grupos son sugerencias de revisión. No representan "
-                "eliminación automática ni modificación del inventario original."
+            columna_id = st.selectbox(
+                "Columna identificadora",
+                columnas,
+                index=indice_id
             )
 
-        with resultado_tab3:
-            st.subheader("Reportes descargables")
+        with col_b:
+            umbral = st.slider(
+                "Umbral mínimo de similitud (%)",
+                min_value=50,
+                max_value=100,
+                value=82,
+                step=1
+            )
 
-            if not tabla_pares.empty:
-                st.download_button(
-                    label="Descargar detalle de pares relacionados",
-                    data=tabla_pares.to_csv(index=False).encode("utf-8-sig"),
-                    file_name="stockmatch_pares_relacionados.csv",
-                    mime="text/csv",
-                    use_container_width=True
-                )
+        columnas_disponibles = [
+            columna for columna in columnas
+            if columna != columna_id
+        ]
 
-            if not tabla_grupos.empty:
-                st.download_button(
-                    label="Descargar reporte de grupos",
-                    data=tabla_grupos.to_csv(index=False).encode("utf-8-sig"),
-                    file_name="stockmatch_grupos_revision.csv",
-                    mime="text/csv",
-                    use_container_width=True
-                )
+        columnas_sugeridas = sugerir_columnas_comparacion(
+            columnas,
+            columna_id
+        )
 
-            if tabla_pares.empty and tabla_grupos.empty:
-                st.write(
-                    "No hay reportes disponibles porque no se encontraron "
-                    "coincidencias con el umbral seleccionado."
-                )
+        columnas_comparacion = st.multiselect(
+            "Columnas para comparar",
+            columnas_disponibles,
+            default=columnas_sugeridas
+        )
 
-    else:
+        st.caption(
+            "Mientras más alto sea el umbral, más estricta será la comparación. "
+            "Un umbral bajo detecta más coincidencias, pero puede generar falsos positivos."
+        )
+
+    if not columnas_comparacion:
+        st.warning("Selecciona al menos una columna para comparar.")
+        return
+
+    with st.container(border=True):
+        st.markdown("### 3. Resumen de configuración")
+
+        r1, r2, r3 = st.columns(3)
+
+        with r1:
+            st.metric("Registros", len(df))
+
+        with r2:
+            st.metric("Columnas comparadas", len(columnas_comparacion))
+
+        with r3:
+            st.metric("Umbral", f"{umbral}%")
+
+        st.write("**Columna ID:**", columna_id)
+        st.write("**Columnas usadas para la proyección:**", ", ".join(columnas_comparacion))
+
+    if st.button("Guardar configuración y continuar", use_container_width=True):
+        st.session_state["df"] = df.copy()
+        st.session_state["columna_id"] = columna_id
+        st.session_state["columnas_comparacion"] = columnas_comparacion
+        st.session_state["umbral"] = umbral
+        st.session_state["resultado"] = None
+        st.session_state["pagina"] = "Análisis y reportes"
+        st.rerun()
+
+
+# ==========================================================
+# 11. PÁGINA DE ANÁLISIS Y REPORTES
+# ==========================================================
+
+def pagina_analisis():
+    st.title("Análisis y reportes")
+
+    if "df" not in st.session_state:
+        st.warning("Primero debes cargar un inventario y guardar la configuración.")
+        if st.button("Ir a configuración", use_container_width=True):
+            st.session_state["pagina"] = "Configuración"
+            st.rerun()
+        return
+
+    df = st.session_state["df"]
+    columna_id = st.session_state["columna_id"]
+    columnas_comparacion = st.session_state["columnas_comparacion"]
+    umbral = st.session_state["umbral"]
+
+    with st.container(border=True):
+        st.markdown("### Configuración activa")
+
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            st.metric("Registros", len(df))
+
+        with c2:
+            st.metric("Umbral", f"{umbral}%")
+
+        with c3:
+            st.metric("Columnas comparadas", len(columnas_comparacion))
+
+        st.write("**Columna identificadora:**", columna_id)
+        st.write("**Columnas comparadas:**", ", ".join(columnas_comparacion))
+        st.caption(
+            "Los pares comparados se calculan con n(n−1)/2, porque se comparan pares únicos."
+        )
+
+    if st.button("Ejecutar análisis", use_container_width=True):
+        with st.spinner("Analizando registros y formando grupos de revisión..."):
+            st.session_state["resultado"] = analizar_inventario(
+                df=df,
+                columna_id=columna_id,
+                columnas_comparacion=columnas_comparacion,
+                umbral=umbral
+            )
+
+    resultado = st.session_state.get("resultado")
+
+    if resultado is None:
+        st.info("Presiona “Ejecutar análisis” para generar los resultados.")
+        return
+
+    resumen = resultado["resumen"]
+    tabla_pares = resultado["tabla_pares"]
+    tabla_pares_interna = resultado["tabla_pares_interna"]
+    tabla_grupos = resultado["tabla_grupos"]
+    reporte_completo = resultado["reporte_completo"]
+    detalles_por_par = resultado["detalles_por_par"]
+    grupos_validos = resultado["grupos_validos"]
+    df_trabajo = resultado["df_trabajo"]
+
+    st.markdown("## Resultados del análisis")
+
+    m1, m2, m3, m4 = st.columns(4)
+
+    with m1:
+        st.metric("Registros analizados", resumen["registros"])
+
+    with m2:
+        st.metric("Pares comparados", resumen["pares_comparados"])
+
+    with m3:
+        st.metric("Pares seleccionados", resumen["pares_detectados"])
+
+    with m4:
+        st.metric("Grupos detectados", resumen["grupos_detectados"])
+
+    tab_pares, tab_grupos, tab_desglose, tab_descargas = st.tabs(
+        [
+            "Pares relacionados",
+            "Grupos de revisión",
+            "Desglose",
+            "Descargas"
+        ]
+    )
+
+    with tab_pares:
+        st.subheader("Pares que cumplen el criterio de selección")
+
+        if tabla_pares.empty:
+            st.warning("No se detectaron pares con el umbral seleccionado.")
+        else:
+            st.dataframe(
+                tabla_pares,
+                use_container_width=True,
+                hide_index=True
+            )
+
+    with tab_grupos:
+        st.subheader("Grupos de posibles coincidencias")
+
+        if tabla_grupos.empty:
+            st.info("No se formaron grupos de revisión.")
+        else:
+            st.dataframe(
+                tabla_grupos,
+                use_container_width=True,
+                hide_index=True
+            )
+
         st.info(
-            "Cuando la configuración esté lista, presiona "
-            "“Ejecutar análisis” para aplicar el modelo."
+            "Los grupos son sugerencias de revisión. El sistema no elimina "
+            "ni modifica registros automáticamente."
+        )
+
+    with tab_desglose:
+        st.subheader("Desglose de similitud por grupo")
+
+        if tabla_grupos.empty:
+            st.info("No hay grupos para desglosar.")
+        else:
+            for numero, grupo in enumerate(grupos_validos, start=1):
+                nombre_grupo = f"G-{numero}"
+
+                with st.expander(
+                    f"{nombre_grupo} — {len(grupo)} registros relacionados",
+                    expanded=False
+                ):
+                    columnas_vista = [columna_id] + [
+                        columna for columna in columnas_comparacion
+                        if columna != columna_id
+                    ]
+
+                    columnas_vista = [
+                        columna for columna in columnas_vista
+                        if columna in df_trabajo.columns
+                    ]
+
+                    st.markdown("**Registros del grupo**")
+                    st.dataframe(
+                        df_trabajo.loc[grupo, columnas_vista],
+                        use_container_width=True,
+                        hide_index=True
+                    )
+
+                    pares_grupo = tabla_pares_interna[
+                        tabla_pares_interna["Grupo"] == nombre_grupo
+                    ]
+
+                    if pares_grupo.empty:
+                        st.write("No hay pares directos registrados para este grupo.")
+                    else:
+                        st.markdown("**Pares directos detectados**")
+
+                        pares_visibles = pares_grupo[
+                            [
+                                "ID A",
+                                "Registro A",
+                                "ID B",
+                                "Registro B",
+                                "Similitud promedio (%)",
+                                "Motivo principal"
+                            ]
+                        ]
+
+                        st.dataframe(
+                            pares_visibles,
+                            use_container_width=True,
+                            hide_index=True
+                        )
+
+                        opciones = []
+
+                        for _, fila in pares_grupo.iterrows():
+                            etiqueta = (
+                                f"{fila['ID A']} ↔ {fila['ID B']} "
+                                f"({fila['Similitud promedio (%)']}%)"
+                            )
+                            opciones.append(
+                                {
+                                    "etiqueta": etiqueta,
+                                    "i": int(fila["_i"]),
+                                    "j": int(fila["_j"])
+                                }
+                            )
+
+                        etiquetas = [opcion["etiqueta"] for opcion in opciones]
+
+                        seleccion = st.selectbox(
+                            "Selecciona un par para ver la comparación campo por campo",
+                            etiquetas,
+                            key=f"select_{nombre_grupo}"
+                        )
+
+                        opcion_seleccionada = next(
+                            opcion for opcion in opciones
+                            if opcion["etiqueta"] == seleccion
+                        )
+
+                        detalle = detalles_por_par[
+                            (
+                                opcion_seleccionada["i"],
+                                opcion_seleccionada["j"]
+                            )
+                        ]
+
+                        st.markdown("**Comparación campo por campo**")
+                        st.dataframe(
+                            detalle,
+                            use_container_width=True,
+                            hide_index=True
+                        )
+
+    with tab_descargas:
+        st.subheader("Reportes descargables")
+
+        st.write(
+            "Estos archivos permiten revisar los resultados fuera de la aplicación. "
+            "Ningún reporte modifica el inventario original."
+        )
+
+        st.download_button(
+            label="Descargar reporte completo de auditoría",
+            data=reporte_completo.to_csv(index=False).encode("utf-8-sig"),
+            file_name="stockmatch_reporte_completo.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+
+        if not tabla_pares.empty:
+            st.download_button(
+                label="Descargar detalle de pares relacionados",
+                data=tabla_pares.to_csv(index=False).encode("utf-8-sig"),
+                file_name="stockmatch_pares_relacionados.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
+        if not tabla_grupos.empty:
+            st.download_button(
+                label="Descargar grupos de revisión",
+                data=tabla_grupos.to_csv(index=False).encode("utf-8-sig"),
+                file_name="stockmatch_grupos_revision.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
+    st.divider()
+
+    with st.expander("Guía rápida para defensa oral"):
+        st.dataframe(
+            tabla_guia_defensa(),
+            use_container_width=True,
+            hide_index=True
         )
 
 
-with tab_modelo:
+# ==========================================================
+# 12. EJECUTAR PÁGINA SELECCIONADA
+# ==========================================================
 
-    st.markdown(
-        """
-        <div class="section-card">
-            <div class="section-label">Fundamento académico</div>
-            <div class="section-title">Aplicación de Matemáticas Discretas</div>
-            <div class="section-desc">
-                Esta sección resume cómo los conceptos del curso se traducen
-                en operaciones dentro del prototipo.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.dataframe(
-        tabla_matematica(),
-        use_container_width=True,
-        hide_index=True
-    )
-
-    st.markdown("### Formalización breve")
-
-    st.latex(r"I = \{r_1, r_2, r_3, \ldots, r_n\}")
-
-    st.write(
-        "El inventario se modela como un conjunto de registros. "
-        "Cada registro contiene atributos como nombre, marca, categoría "
-        "o descripción."
-    )
-
-    st.latex(r"\pi_{atributos}(I)")
-
-    st.write(
-        "La proyección selecciona únicamente los atributos relevantes "
-        "para comparar los registros."
-    )
-
-    st.latex(r"R = \{(r_i,r_j) \in I \times I : similitud(r_i,r_j) \geq \theta\}")
-
-    st.write(
-        "La relación de posible duplicidad se forma con los pares de registros "
-        "cuya similitud supera el umbral θ."
-    )
-
-    st.latex(r"(r_i,r_j) \in R \land (r_j,r_k) \in R \Rightarrow r_i, r_j, r_k \text{ pertenecen al mismo grupo}")
-
-    st.write(
-        "La transitividad se utiliza para formar grupos de revisión cuando "
-        "los registros están conectados directa o indirectamente."
-    )
-
-
-with tab_defensa:
-
-    st.markdown(
-        """
-        <div class="section-card">
-            <div class="section-label">Preparación oral</div>
-            <div class="section-title">Preguntas probables de defensa</div>
-            <div class="section-desc">
-                Esta tabla sirve como apoyo para explicar el prototipo sin depender
-                de una explicación línea por línea del código.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.dataframe(
-        tabla_guia_defensa(),
-        use_container_width=True,
-        hide_index=True
-    )
-
-    st.markdown("### Explicación corta recomendada")
-
-    st.write(
-        "El inventario se representa como un conjunto de registros. "
-        "Primero se aplica una proyección al seleccionar las columnas relevantes. "
-        "Luego se comparan pares únicos de registros, lo que representa el producto "
-        "cartesiano de forma optimizada. Después, mediante un umbral de similitud, "
-        "se aplica una selección para conservar solo los pares que cumplen la condición. "
-        "Finalmente, los pares relacionados se agrupan usando transitividad, formando "
-        "grupos de posibles duplicados que deben ser revisados por una persona."
-    )
-
-    st.markdown("### Idea ética clave")
-
-    st.write(
-        "El prototipo no elimina registros automáticamente porque una coincidencia "
-        "alta no garantiza que dos productos sean exactamente iguales. Por eso, "
-        "StockMatch funciona como herramienta de auditoría y apoyo a la decisión, "
-        "manteniendo la revisión humana como etapa final."
-    )
-
-
-st.markdown(
-    """
-    <div class="footer-note">
-        StockMatch · Prototipo académico de Matemáticas Discretas · Auditoría de inventarios
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+if pagina == "Inicio":
+    pagina_inicio()
+elif pagina == "Configuración":
+    pagina_configuracion()
+else:
+    pagina_analisis()
