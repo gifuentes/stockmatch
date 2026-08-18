@@ -16,10 +16,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 
-# ==========================================================
-# 1. CONFIGURACIÓN GENERAL
-# ==========================================================
-
 st.set_page_config(
     page_title="StockMatch | Auditoría de Inventarios",
     page_icon="📦",
@@ -27,10 +23,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-
-# ==========================================================
-# 2. ESTADO INICIAL
-# ==========================================================
 
 if "page" not in st.session_state:
     st.session_state["page"] = "Inicio"
@@ -45,12 +37,7 @@ if "_scroll_top" not in st.session_state:
     st.session_state["_scroll_top"] = False
 
 
-# ==========================================================
-# 3. FUNCIONES DE INTERFAZ
-# ==========================================================
-
 def ui(markup: str):
-    """Renderiza HTML de presentación sin que Streamlit lo muestre como código."""
     clean = dedent(markup).strip()
     clean = re.sub(r"\s*\n\s*", " ", clean)
     clean = re.sub(r">\s+<", "><", clean)
@@ -58,7 +45,6 @@ def ui(markup: str):
 
 
 def scroll_to_top():
-    """Sube al inicio después de cambiar de pantalla."""
     if st.session_state.get("_scroll_top", False):
         components.html(
             """
@@ -75,7 +61,6 @@ def scroll_to_top():
 
 
 def change_page(page_name: str):
-    """Cambia de pantalla sin perder la configuración guardada."""
     st.session_state["page"] = page_name
     st.session_state["_scroll_top"] = True
 
@@ -84,15 +69,11 @@ def change_page(page_name: str):
 
 
 def change_view(view_name: str):
-    """Cambia la sección interna del análisis."""
     st.session_state["result_view"] = view_name
     st.session_state["_scroll_top"] = True
 
 
 def altura_tabla(df, minimo=150, maximo=430):
-    """
-    Calcula una altura adecuada para evitar filas vacías grandes.
-    """
     if df is None or df.empty:
         return minimo
 
@@ -100,10 +81,6 @@ def altura_tabla(df, minimo=150, maximo=430):
     altura = 44 + filas * 36
     return max(minimo, min(altura, maximo))
 
-
-# ==========================================================
-# 4. ESTILOS VISUALES
-# ==========================================================
 
 st.markdown(
     """
@@ -130,7 +107,7 @@ st.markdown(
 
     .block-container {
         max-width: 1220px;
-        padding-top: 1.1rem;
+        padding-top: 4.8rem !important;
         padding-bottom: 3rem;
     }
 
@@ -585,10 +562,6 @@ st.markdown(
 )
 
 
-# ==========================================================
-# 5. NAVEGACIÓN SUPERIOR
-# ==========================================================
-
 def nav_key(page_name: str):
     active = st.session_state["page"] == page_name
     clean = (
@@ -644,10 +617,6 @@ def render_topbar():
     scroll_to_top()
 
 
-# ==========================================================
-# 6. KPI
-# ==========================================================
-
 def render_kpis(items, columns=4):
     cols = st.columns(columns, gap="medium")
 
@@ -667,10 +636,6 @@ def render_kpis(items, columns=4):
                 unsafe_allow_html=True
             )
 
-
-# ==========================================================
-# 7. NORMALIZACIÓN Y SIMILITUD
-# ==========================================================
 
 def normalizar_texto(valor) -> str:
     if pd.isna(valor):
@@ -745,10 +710,6 @@ def comparar_dos_registros(fila_a, fila_b, columnas_comparacion):
     return similitud_promedio, motivo, pd.DataFrame(detalle)
 
 
-# ==========================================================
-# 8. AGRUPACIÓN POR TRANSITIVIDAD
-# ==========================================================
-
 class UnionFind:
     def __init__(self, elementos):
         self.padre = {elemento: elemento for elemento in elementos}
@@ -774,10 +735,6 @@ class UnionFind:
 
         return list(grupos.values())
 
-
-# ==========================================================
-# 9. MOTOR PRINCIPAL
-# ==========================================================
 
 def analizar_inventario(df, columna_id, columnas_comparacion, umbral):
     df_trabajo = df.copy().reset_index(drop=True)
@@ -923,10 +880,6 @@ def analizar_inventario(df, columna_id, columnas_comparacion, umbral):
     }
 
 
-# ==========================================================
-# 10. CSV Y DATOS DE DEMOSTRACIÓN
-# ==========================================================
-
 def leer_csv(archivo):
     try:
         archivo.seek(0)
@@ -1015,10 +968,6 @@ def sugerir_columnas_comparacion(columnas, columna_id):
     return [columna for columna in columnas if columna != columna_id][:3]
 
 
-# ==========================================================
-# 11. PÁGINA INICIO
-# ==========================================================
-
 def page_inicio():
     ui("""
     <div class="hero">
@@ -1094,10 +1043,6 @@ def page_inicio():
         change_page("Configuración")
         st.rerun()
 
-
-# ==========================================================
-# 12. PÁGINA CONFIGURACIÓN
-# ==========================================================
 
 def page_configuracion():
     st.title("Configuración del análisis")
@@ -1240,10 +1185,6 @@ def page_configuracion():
         change_page("Análisis")
         st.rerun()
 
-
-# ==========================================================
-# 13. PÁGINA ANÁLISIS
-# ==========================================================
 
 def render_result_nav():
     labels = ["Resumen", "Grupos", "Pares", "Desglose", "Descargas"]
@@ -1625,10 +1566,6 @@ def page_analisis():
             else:
                 st.info("No hay grupos para descargar.")
 
-
-# ==========================================================
-# 14. EJECUCIÓN
-# ==========================================================
 
 render_topbar()
 
