@@ -2,22 +2,12 @@
 # STOCKMATCH
 # Auditoría de inventarios no estructurados
 # Matemáticas Discretas - Álgebra Relacional
-#
-# Versión organizada como página web:
-# 1. Inicio
-# 2. Configuración
-# 3. Análisis y reportes
-#
-# La lógica principal está en Python.
-# El diseño visual usa CSS mínimo para presentación profesional.
 # ==========================================================
 
 import re
 import unicodedata
-from html import escape
 from difflib import SequenceMatcher
 from itertools import combinations
-from textwrap import dedent
 
 import pandas as pd
 import streamlit as st
@@ -25,7 +15,7 @@ import streamlit.components.v1 as components
 
 
 # ==========================================================
-# 1. CONFIGURACIÓN GENERAL
+# CONFIGURACIÓN GENERAL
 # ==========================================================
 
 st.set_page_config(
@@ -37,76 +27,33 @@ st.set_page_config(
 
 
 # ==========================================================
-# 2. FUNCIONES DE INTERFAZ
+# ESTADO DE LA APP
 # ==========================================================
 
-def ui(markup: str):
-    """Renderiza HTML sin que Streamlit lo interprete como bloque de código."""
-    st.markdown(dedent(markup).strip(), unsafe_allow_html=True)
+if "page" not in st.session_state:
+    st.session_state["page"] = "Inicio"
 
+if "result_view" not in st.session_state:
+    st.session_state["result_view"] = "Resumen"
 
-def scroll_top_once():
-    """Intenta llevar la página al inicio después de cambiar de sección."""
-    if st.session_state.get("_scroll_top", False):
-        components.html(
-            """
-            <script>
-            try {
-                window.parent.scrollTo({top: 0, behavior: "smooth"});
-                const main = window.parent.document.querySelector("section.main");
-                if (main) { main.scrollTo({top: 0, behavior: "smooth"}); }
-            } catch(e) {}
-            </script>
-            """,
-            height=0
-        )
-        st.session_state["_scroll_top"] = False
+if "resultado" not in st.session_state:
+    st.session_state["resultado"] = None
 
-
-def set_page(page: str, view: str = "resumen"):
-    """Cambia de página y actualiza la URL."""
-    st.session_state["_scroll_top"] = True
-    st.query_params.clear()
-    st.query_params["page"] = page
-    if page == "analisis":
-        st.query_params["view"] = view
-    st.rerun()
-
-
-def current_page():
-    page = st.query_params.get("page", "inicio")
-    if page not in ["inicio", "configuracion", "analisis"]:
-        page = "inicio"
-    return page
-
-
-def current_view():
-    view = st.query_params.get("view", "resumen")
-    if view not in ["resumen", "pares", "desglose", "descargas"]:
-        view = "resumen"
-    return view
-
-
-def nav_class(page_name: str):
-    return "nav-item active" if current_page() == page_name else "nav-item"
-
-
-def view_class(view_name: str):
-    return "view-item active" if current_view() == view_name else "view-item"
+if "scroll_top" not in st.session_state:
+    st.session_state["scroll_top"] = False
 
 
 # ==========================================================
-# 3. ESTILOS VISUALES
+# CSS
 # ==========================================================
 
-ui("""
+st.markdown("""
 <style>
 :root {
     --navy: #020B1F;
     --navy2: #061A33;
-    --navy3: #0A2A52;
     --blue: #123E73;
-    --blue2: #1F5D99;
+    --blue2: #1E5C99;
     --sky: #EAF2FF;
     --bg: #F4F7FB;
     --white: #FFFFFF;
@@ -114,21 +61,18 @@ ui("""
     --muted: #64748B;
     --border: #D6E0EF;
     --teal: #0F766E;
-    --green-soft: #ECFDF5;
     --gold: #B7791F;
-    --gold-soft: #FFF7E6;
     --red: #B42318;
-    --red-soft: #FEF3F2;
 }
 
 .stApp {
-    background: linear-gradient(180deg, #F7FAFE 0%, #EEF4FA 100%);
+    background: linear-gradient(180deg, #F8FBFF 0%, #EFF5FB 100%);
     color: var(--text);
 }
 
 .block-container {
-    max-width: 1220px;
-    padding-top: 1.2rem;
+    max-width: 1240px;
+    padding-top: 2.6rem;
     padding-bottom: 3rem;
 }
 
@@ -143,10 +87,10 @@ html, body, [class*="css"] {
 
 h1 {
     color: var(--navy2) !important;
-    font-size: 2.45rem !important;
+    font-size: 2.35rem !important;
     font-weight: 850 !important;
     letter-spacing: -0.04em !important;
-    margin-bottom: 0.4rem !important;
+    margin-bottom: 0.7rem !important;
 }
 
 h2 {
@@ -160,101 +104,61 @@ h3 {
     font-weight: 780 !important;
 }
 
-/* Barra superior */
-.topbar {
+.app-header {
     background: #FFFFFF;
     border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 16px 18px;
-    margin-bottom: 22px;
-    box-shadow: 0 10px 24px rgba(6, 26, 51, 0.07);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 18px;
+    border-radius: 22px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 28px rgba(6, 26, 51, 0.07);
 }
 
-.brand {
+.brand-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    min-width: 260px;
+    gap: 14px;
 }
 
 .brand-mark {
-    width: 44px;
-    height: 44px;
-    border-radius: 13px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
     background: linear-gradient(135deg, var(--navy), var(--blue));
     display: flex;
     align-items: center;
     justify-content: center;
     color: #FFFFFF;
     font-weight: 900;
-    font-size: 14px;
+    font-size: 15px;
 }
 
-.brand-name {
-    font-size: 1.18rem;
+.brand-title {
+    font-size: 1.35rem;
     font-weight: 900;
     color: var(--navy2);
     line-height: 1.1;
 }
 
-.brand-sub {
+.brand-subtitle {
     color: var(--muted);
-    font-size: 0.82rem;
+    font-size: 0.86rem;
     margin-top: 3px;
 }
 
-.nav {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-}
-
-.nav-item {
-    text-decoration: none !important;
-    color: var(--navy2) !important;
-    background: #F1F5FB;
-    border: 1px solid #DCE6F4;
-    padding: 12px 20px;
-    border-radius: 13px;
-    font-weight: 800;
-    font-size: 0.92rem;
-    display: inline-block;
-    min-width: 132px;
-    text-align: center;
-}
-
-.nav-item:hover {
-    background: #EAF2FF;
-    border-color: #BBD0EA;
-}
-
-.nav-item.active {
-    background: var(--navy2);
-    color: #FFFFFF !important;
-    border-color: var(--navy2);
-    box-shadow: 0 8px 18px rgba(6, 26, 51, 0.20);
-}
-
-/* Portada */
 .hero {
     background:
-        radial-gradient(circle at 82% 18%, rgba(31,93,153,0.95) 0%, rgba(6,26,51,0.92) 35%, rgba(2,11,31,1) 100%);
-    border-radius: 28px;
+        radial-gradient(circle at 83% 18%, rgba(31, 92, 153, 0.95) 0%, rgba(6, 26, 51, 0.92) 36%, rgba(2, 11, 31, 1) 100%);
     color: white;
+    border-radius: 28px;
     padding: 48px 52px;
-    margin-bottom: 24px;
-    box-shadow: 0 22px 50px rgba(2, 11, 31, 0.24);
+    margin: 22px 0 26px;
+    box-shadow: 0 22px 52px rgba(2, 11, 31, 0.24);
 }
 
 .hero-grid {
     display: grid;
     grid-template-columns: 1.35fr 0.85fr;
-    gap: 36px;
+    gap: 38px;
     align-items: center;
 }
 
@@ -263,7 +167,7 @@ h3 {
     padding: 8px 15px;
     border-radius: 999px;
     background: rgba(255,255,255,0.10);
-    border: 1px solid rgba(255,255,255,0.22);
+    border: 1px solid rgba(255,255,255,0.20);
     color: #D8E9FF;
     font-size: 0.78rem;
     font-weight: 850;
@@ -320,26 +224,18 @@ h3 {
     font-weight: 950;
 }
 
-/* Cajas */
-.card {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    padding: 26px 28px;
-    margin-bottom: 22px;
-    box-shadow: 0 10px 26px rgba(6, 26, 51, 0.07);
+.info-box {
+    background: #EAF2FF;
+    border: 1px solid #C7D9F0;
+    border-left: 6px solid var(--blue);
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin: 10px 0 22px;
+    color: #1E293B;
+    line-height: 1.65;
 }
 
-.card-tight {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 22px 24px;
-    margin-bottom: 18px;
-    box-shadow: 0 8px 20px rgba(6, 26, 51, 0.055);
-}
-
-.label {
+.card-title-small {
     color: var(--muted);
     font-size: 0.76rem;
     text-transform: uppercase;
@@ -348,9 +244,9 @@ h3 {
     margin-bottom: 8px;
 }
 
-.card-title {
+.card-heading {
     color: var(--navy2);
-    font-size: 1.35rem;
+    font-size: 1.28rem;
     font-weight: 900;
     letter-spacing: -0.04em;
     margin-bottom: 8px;
@@ -362,28 +258,22 @@ h3 {
     line-height: 1.68;
 }
 
-/* Métricas */
-.kpi-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin: 18px 0 24px;
-}
-
-.kpi {
-    background: #FFFFFF;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 9px 22px rgba(6, 26, 51, 0.07);
-    min-height: 118px;
+.kpi-wrapper {
     border-top: 6px solid var(--navy2);
+    background: #FFFFFF;
+    border-radius: 18px;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 18px 16px;
+    min-height: 120px;
+    box-shadow: 0 8px 20px rgba(6, 26, 51, 0.06);
 }
 
-.kpi.blue { border-top-color: var(--blue); }
-.kpi.teal { border-top-color: var(--teal); }
-.kpi.gold { border-top-color: var(--gold); }
-.kpi.red { border-top-color: var(--red); }
+.kpi-wrapper.blue { border-top-color: var(--blue); }
+.kpi-wrapper.teal { border-top-color: var(--teal); }
+.kpi-wrapper.gold { border-top-color: var(--gold); }
+.kpi-wrapper.red { border-top-color: var(--red); }
 
 .kpi-label {
     color: var(--muted);
@@ -396,79 +286,25 @@ h3 {
 
 .kpi-value {
     color: var(--navy2);
-    font-size: 1.88rem;
+    font-size: 1.8rem;
     font-weight: 950;
-    letter-spacing: -0.055em;
-    line-height: 1.04;
+    letter-spacing: -0.05em;
+    line-height: 1.08;
     word-break: break-word;
 }
 
 .kpi-note {
     color: #64748B;
     font-size: 0.84rem;
-    margin-top: 9px;
-    line-height: 1.4;
-}
-
-/* Pasos */
-.step-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-}
-
-.step-card {
-    background: #FFFFFF;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 22px;
-    min-height: 162px;
-    box-shadow: 0 8px 20px rgba(6, 26, 51, 0.055);
-}
-
-.step-num {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    background: var(--navy2);
-    color: #FFFFFF;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 950;
-    margin-bottom: 14px;
-}
-
-.step-title {
-    font-size: 1.05rem;
-    color: var(--navy2);
-    font-weight: 900;
-    margin-bottom: 8px;
-}
-
-.step-text {
-    color: var(--muted);
-    line-height: 1.6;
-    font-size: 0.92rem;
-}
-
-/* Mensajes */
-.info-box {
-    background: #EAF2FF;
-    border: 1px solid #C7D9F0;
-    border-left: 6px solid var(--blue);
-    border-radius: 18px;
-    padding: 16px 18px;
-    margin-bottom: 20px;
-    color: #1E293B;
-    line-height: 1.65;
+    margin-top: 8px;
+    line-height: 1.45;
 }
 
 .empty-box {
     background: #FFFFFF;
     border: 1px dashed #9DB8D8;
     border-radius: 22px;
-    padding: 42px 32px;
+    padding: 44px 32px;
     text-align: center;
     margin: 22px 0;
 }
@@ -483,66 +319,45 @@ h3 {
 .empty-text {
     color: var(--muted);
     line-height: 1.65;
-    max-width: 680px;
+    max-width: 690px;
     margin: 0 auto;
 }
 
-/* Navegación interna de resultados */
-.view-nav {
-    background: #FFFFFF;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 13px;
-    margin: 24px 0 24px;
-    box-shadow: 0 8px 20px rgba(6,26,51,0.055);
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-}
-
-.view-item {
-    text-decoration: none !important;
-    background: #F1F5FB;
-    border: 1px solid #DCE6F4;
-    color: var(--navy2) !important;
-    border-radius: 14px;
-    padding: 14px 16px;
-    text-align: center;
-    font-weight: 850;
-}
-
-.view-item.active {
-    background: var(--navy2);
-    color: #FFFFFF !important;
-    border-color: var(--navy2);
-    box-shadow: 0 8px 18px rgba(6,26,51,0.18);
-}
-
-.view-item:hover {
-    background: #EAF2FF;
-    border-color: #BBD0EA;
-}
-
-.view-item.active:hover {
-    background: var(--navy3);
-    color: #FFFFFF !important;
-}
-
-/* Separadores */
-.divider-blue {
+.blue-line {
     height: 5px;
     background: linear-gradient(90deg, var(--navy2), var(--blue), transparent);
     border-radius: 999px;
-    margin: 24px 0 22px;
+    margin: 26px 0 24px;
 }
 
-.divider-thin {
-    height: 1px;
-    background: #C9D6E8;
-    margin: 22px 0;
+.table-note {
+    color: var(--muted);
+    font-size: 0.93rem;
+    line-height: 1.55;
+    margin-bottom: 12px;
 }
 
-/* Componentes Streamlit */
+/* Segmentos / botones de navegación */
+div[data-testid="stSegmentedControl"] {
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 10px;
+    box-shadow: 0 8px 20px rgba(6,26,51,0.055);
+}
+
+div[data-testid="stSegmentedControl"] button {
+    min-height: 46px !important;
+    border-radius: 13px !important;
+    font-weight: 850 !important;
+    color: var(--navy2) !important;
+}
+
+div[data-testid="stSegmentedControl"] button[aria-pressed="true"] {
+    background: var(--navy2) !important;
+    color: white !important;
+}
+
 div.stButton > button {
     background: var(--navy2);
     color: white;
@@ -602,106 +417,127 @@ div[data-testid="stExpander"] {
     margin-bottom: 14px;
 }
 
-.small-caption {
-    color: var(--muted);
-    font-size: 0.88rem;
-    line-height: 1.55;
-}
-
-/* Layout responsive */
 @media (max-width: 980px) {
-    .topbar {
-        display: block;
-    }
-    .nav {
-        margin-top: 14px;
-        justify-content: flex-start;
-    }
-    .hero-grid,
-    .kpi-row,
-    .step-row,
-    .view-nav {
+    .hero-grid {
         grid-template-columns: 1fr;
     }
     .hero-title {
-        font-size: 2.6rem;
+        font-size: 2.55rem;
     }
 }
 </style>
-""")
+""", unsafe_allow_html=True)
 
 
 # ==========================================================
-# 4. ESTADO INICIAL
+# UTILIDADES DE NAVEGACIÓN
 # ==========================================================
 
-if "resultado" not in st.session_state:
-    st.session_state["resultado"] = None
+def scroll_to_top_if_needed():
+    if st.session_state.get("scroll_top"):
+        components.html(
+            """
+            <script>
+            window.parent.scrollTo({top: 0, behavior: "smooth"});
+            </script>
+            """,
+            height=0
+        )
+        st.session_state["scroll_top"] = False
 
 
-# ==========================================================
-# 5. BARRA SUPERIOR
-# ==========================================================
-
-def render_topbar():
-    page = current_page()
-
-    ui(f"""
-    <div class="topbar">
-        <div class="brand">
-            <div class="brand-mark">SM</div>
-            <div>
-                <div class="brand-name">StockMatch</div>
-                <div class="brand-sub">Auditoría de inventarios no estructurados</div>
-            </div>
-        </div>
-        <div class="nav">
-            <a class="{nav_class('inicio')}" href="?page=inicio">Inicio</a>
-            <a class="{nav_class('configuracion')}" href="?page=configuracion">Configuración</a>
-            <a class="{nav_class('analisis')}" href="?page=analisis&view=resumen">Análisis y reportes</a>
-        </div>
-    </div>
-    """)
-
-    scroll_top_once()
+def change_page(page_name):
+    st.session_state["page"] = page_name
+    st.session_state["scroll_top"] = True
+    st.rerun()
 
 
-# ==========================================================
-# 6. TARJETAS KPI
-# ==========================================================
+def change_result_view(view_name):
+    st.session_state["result_view"] = view_name
+    st.session_state["scroll_top"] = True
+    st.rerun()
 
-def render_kpis(items):
-    cards = []
-    for item in items:
-        variant = escape(str(item.get("variant", "")))
-        label = escape(str(item.get("label", "")))
-        value = escape(str(item.get("value", "")))
-        note = escape(str(item.get("note", "")))
 
-        cards.append(
-            f'<div class="kpi {variant}">'
-            f'<div class="kpi-label">{label}</div>'
-            f'<div class="kpi-value">{value}</div>'
-            f'<div class="kpi-note">{note}</div>'
-            f'</div>'
+def segmented_control(label, options, current_value, key):
+    if key not in st.session_state:
+        st.session_state[key] = current_value
+
+    if st.session_state[key] not in options:
+        st.session_state[key] = current_value
+
+    if hasattr(st, "segmented_control"):
+        return st.segmented_control(
+            label,
+            options,
+            default=st.session_state[key],
+            key=key,
+            label_visibility="collapsed"
         )
 
-    ui('<div class="kpi-row">' + "".join(cards) + '</div>')
+    return st.radio(
+        label,
+        options,
+        index=options.index(st.session_state[key]),
+        horizontal=True,
+        key=key,
+        label_visibility="collapsed"
+    )
+
+
+def render_header():
+    st.markdown("""
+<div class="app-header">
+    <div class="brand-row">
+        <div class="brand-mark">SM</div>
+        <div>
+            <div class="brand-title">StockMatch</div>
+            <div class="brand-subtitle">Auditoría de inventarios no estructurados</div>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    selected = segmented_control(
+        "Navegación",
+        ["Inicio", "Configuración", "Análisis y reportes"],
+        st.session_state["page"],
+        "nav_control"
+    )
+
+    if selected != st.session_state["page"]:
+        change_page(selected)
+
+
+def kpi_card(label, value, note, color_class=""):
+    st.markdown(
+        f"""
+<div class="kpi-wrapper {color_class}">
+    <div class="kpi-label">{label}</div>
+    <div class="kpi-value">{value}</div>
+    <div class="kpi-note">{note}</div>
+</div>
+""",
+        unsafe_allow_html=True
+    )
+
+
+def render_kpis(items):
+    cols = st.columns(len(items), gap="medium")
+    for col, item in zip(cols, items):
+        with col:
+            kpi_card(
+                label=item["label"],
+                value=item["value"],
+                note=item["note"],
+                color_class=item.get("color", "")
+            )
 
 
 # ==========================================================
-# 7. NORMALIZACIÓN Y SIMILITUD
+# LÓGICA DEL PROTOTIPO
 # ==========================================================
 
 def normalizar_texto(valor) -> str:
-    """
-    Normaliza un texto para compararlo.
-
-    Ejemplo:
-    'Coca-Cola 500 ML' -> 'coca cola 500 ml'
-
-    No modifica el archivo original, solo se usa para comparar.
-    """
     if pd.isna(valor):
         return ""
 
@@ -720,10 +556,6 @@ def normalizar_texto(valor) -> str:
 
 
 def similitud_textual(valor_a, valor_b) -> float:
-    """
-    Calcula la similitud textual entre dos valores.
-    Retorna un porcentaje entre 0 y 100.
-    """
     texto_a = normalizar_texto(valor_a)
     texto_b = normalizar_texto(valor_b)
 
@@ -745,13 +577,6 @@ def clasificar_confianza(similitud: float) -> str:
 
 
 def comparar_dos_registros(fila_a, fila_b, columnas_comparacion):
-    """
-    Compara dos registros campo por campo.
-
-    Relación con Matemáticas Discretas:
-    si la similitud promedio supera el umbral, el par pertenece
-    a la relación de posible duplicidad.
-    """
     detalle = []
 
     for columna in columnas_comparacion:
@@ -787,18 +612,7 @@ def comparar_dos_registros(fila_a, fila_b, columnas_comparacion):
     return similitud_promedio, motivo, pd.DataFrame(detalle)
 
 
-# ==========================================================
-# 8. AGRUPACIÓN POR TRANSITIVIDAD
-# ==========================================================
-
 class UnionFind:
-    """
-    Estructura para agrupar registros relacionados.
-
-    Si A se relaciona con B, y B con C, entonces A, B y C
-    quedan en el mismo grupo. Esto representa la transitividad.
-    """
-
     def __init__(self, elementos):
         self.padre = {elemento: elemento for elemento in elementos}
 
@@ -824,21 +638,7 @@ class UnionFind:
         return list(grupos.values())
 
 
-# ==========================================================
-# 9. MOTOR PRINCIPAL DEL ANÁLISIS
-# ==========================================================
-
 def analizar_inventario(df, columna_id, columnas_comparacion, umbral):
-    """
-    Ejecuta el análisis:
-
-    1. Conjunto: inventario completo.
-    2. Proyección: columnas elegidas.
-    3. Producto cartesiano reducido: pares únicos.
-    4. Selección: pares con similitud >= umbral.
-    5. Transitividad: agrupación con UnionFind.
-    6. Reporte: tablas descargables para revisión humana.
-    """
     df_trabajo = df.copy().reset_index(drop=True)
     indices = list(df_trabajo.index)
 
@@ -859,6 +659,7 @@ def analizar_inventario(df, columna_id, columnas_comparacion, umbral):
             pares_internos.append({
                 "_i": i,
                 "_j": j,
+                "Grupo": "",
                 "ID A": df_trabajo.loc[i, columna_id],
                 "Registro A": df_trabajo.loc[i, columnas_comparacion[0]],
                 "ID B": df_trabajo.loc[j, columna_id],
@@ -982,10 +783,6 @@ def analizar_inventario(df, columna_id, columnas_comparacion, umbral):
     }
 
 
-# ==========================================================
-# 10. ARCHIVOS CSV Y DEMOSTRACIÓN
-# ==========================================================
-
 def leer_csv(archivo):
     try:
         archivo.seek(0)
@@ -1074,117 +871,99 @@ def sugerir_columnas_comparacion(columnas, columna_id):
 
 
 # ==========================================================
-# 11. PÁGINA INICIO
+# PÁGINAS
 # ==========================================================
 
 def page_inicio():
-    ui("""
-    <div class="hero">
-        <div class="hero-grid">
-            <div>
-                <div class="hero-pill">Auditoría de inventarios</div>
-                <div class="hero-title">StockMatch</div>
-                <div class="hero-text">
-                    Plataforma para detectar posibles registros duplicados en inventarios
-                    no estructurados. El sistema compara productos, agrupa coincidencias
-                    y genera reportes de revisión sin modificar el archivo original.
-                </div>
-            </div>
-            <div class="hero-panel">
-                <div class="hero-panel-title">Flujo del análisis</div>
-                <div class="flow-row"><span>Cargar inventario</span><span class="flow-tag">CSV</span></div>
-                <div class="flow-row"><span>Seleccionar columnas</span><span class="flow-tag">π</span></div>
-                <div class="flow-row"><span>Comparar registros</span><span class="flow-tag">×</span></div>
-                <div class="flow-row"><span>Filtrar coincidencias</span><span class="flow-tag">σ</span></div>
-                <div class="flow-row"><span>Descargar reportes</span><span class="flow-tag">CSV</span></div>
+    st.markdown("""
+<div class="hero">
+    <div class="hero-grid">
+        <div>
+            <div class="hero-pill">Auditoría de inventarios</div>
+            <div class="hero-title">StockMatch</div>
+            <div class="hero-text">
+                Plataforma para detectar posibles registros duplicados en inventarios
+                no estructurados. El sistema compara productos, agrupa coincidencias
+                y genera reportes de revisión sin modificar el archivo original.
             </div>
         </div>
+        <div class="hero-panel">
+            <div class="hero-panel-title">Flujo del análisis</div>
+            <div class="flow-row"><span>Cargar inventario</span><span class="flow-tag">CSV</span></div>
+            <div class="flow-row"><span>Seleccionar columnas</span><span class="flow-tag">π</span></div>
+            <div class="flow-row"><span>Comparar registros</span><span class="flow-tag">×</span></div>
+            <div class="flow-row"><span>Filtrar coincidencias</span><span class="flow-tag">σ</span></div>
+            <div class="flow-row"><span>Descargar reportes</span><span class="flow-tag">CSV</span></div>
+        </div>
     </div>
-    """)
+</div>
+""", unsafe_allow_html=True)
 
     render_kpis([
-        {"label": "Datos originales", "value": "Sin cambios", "note": "La app no elimina registros.", "variant": ""},
-        {"label": "Control de decisión", "value": "Humano", "note": "El usuario valida cada grupo.", "variant": "blue"},
-        {"label": "Salida principal", "value": "CSV", "note": "Reportes listos para revisar.", "variant": "teal"},
-        {"label": "Modelo aplicado", "value": "π × σ", "note": "Álgebra relacional.", "variant": "gold"},
+        {"label": "Datos originales", "value": "Sin cambios", "note": "La app no elimina registros.", "color": ""},
+        {"label": "Control de decisión", "value": "Humano", "note": "El usuario valida cada grupo.", "color": "blue"},
+        {"label": "Salida principal", "value": "CSV", "note": "Reportes listos para revisar.", "color": "teal"},
+        {"label": "Modelo aplicado", "value": "π × σ", "note": "Álgebra relacional.", "color": "gold"},
     ])
 
-    ui("""
-    <div class="card">
-        <div class="label">Uso del sistema</div>
-        <div class="card-title">Proceso de trabajo</div>
-        <div class="card-text">
-            StockMatch está diseñado para que el usuario cargue un inventario,
-            elija los campos que desea comparar y obtenga reportes claros de
-            posibles duplicados.
-        </div>
-    </div>
-    """)
+    st.markdown("## Uso del sistema")
+    st.write(
+        "StockMatch permite cargar un inventario, configurar los campos de comparación, "
+        "ejecutar el análisis y descargar reportes de posibles duplicados."
+    )
 
-    ui("""
-    <div class="step-row">
-        <div class="step-card">
-            <div class="step-num">1</div>
-            <div class="step-title">Subir CSV</div>
-            <div class="step-text">Carga un archivo con encabezados en la primera fila.</div>
-        </div>
-        <div class="step-card">
-            <div class="step-num">2</div>
-            <div class="step-title">Configurar</div>
-            <div class="step-text">Selecciona identificador, columnas de comparación y umbral.</div>
-        </div>
-        <div class="step-card">
-            <div class="step-num">3</div>
-            <div class="step-title">Analizar</div>
-            <div class="step-text">El sistema compara pares y forma grupos de revisión.</div>
-        </div>
-        <div class="step-card">
-            <div class="step-num">4</div>
-            <div class="step-title">Descargar</div>
-            <div class="step-text">Exporta reportes para revisar los resultados.</div>
-        </div>
-    </div>
-    """)
+    p1, p2, p3, p4 = st.columns(4, gap="medium")
 
-    st.write("")
+    with p1:
+        with st.container(border=True):
+            st.markdown("### 1. Subir CSV")
+            st.write("Carga un archivo con encabezados en la primera fila.")
+
+    with p2:
+        with st.container(border=True):
+            st.markdown("### 2. Configurar")
+            st.write("Selecciona identificador, campos y umbral.")
+
+    with p3:
+        with st.container(border=True):
+            st.markdown("### 3. Analizar")
+            st.write("El sistema compara pares y forma grupos.")
+
+    with p4:
+        with st.container(border=True):
+            st.markdown("### 4. Descargar")
+            st.write("Exporta reportes en formato CSV.")
+
+    st.markdown('<div class="blue-line"></div>', unsafe_allow_html=True)
 
     if st.button("Comenzar configuración", use_container_width=True):
-        set_page("configuracion")
+        st.session_state["page"] = "Configuración"
+        st.session_state["nav_control"] = "Configuración"
+        st.session_state["scroll_top"] = True
+        st.rerun()
 
-
-# ==========================================================
-# 12. PÁGINA CONFIGURACIÓN
-# ==========================================================
 
 def page_configuracion():
     st.title("Configuración del análisis")
 
-    ui("""
-    <div class="info-box">
-        Carga un inventario en formato CSV y define qué columnas usará StockMatch
-        para comparar los registros.
-    </div>
-    """)
+    st.markdown("""
+<div class="info-box">
+Carga un inventario en formato CSV y define qué columnas usará StockMatch para comparar los registros.
+</div>
+""", unsafe_allow_html=True)
 
-    col_left, col_right = st.columns([1.05, 0.95], gap="large")
+    col_left, col_right = st.columns([1, 1], gap="large")
 
     with col_left:
-        ui("""
-        <div class="card-tight">
-            <div class="label">Paso 1</div>
-            <div class="card-title">Carga del inventario</div>
-            <div class="card-text">
-                Puedes subir un archivo CSV o utilizar datos de demostración para probar el sistema.
-            </div>
-        </div>
-        """)
+        with st.container(border=True):
+            st.markdown("### Carga del inventario")
+            st.write("Sube un archivo CSV o utiliza datos de demostración para probar el sistema.")
 
-        usar_ejemplo = st.checkbox("Usar inventario de demostración", value=False)
+            usar_ejemplo = st.checkbox("Usar inventario de demostración", value=False)
 
-        archivo = None
-
-        if not usar_ejemplo:
-            archivo = st.file_uploader("Subir archivo CSV", type=["csv"])
+            archivo = None
+            if not usar_ejemplo:
+                archivo = st.file_uploader("Subir archivo CSV", type=["csv"])
 
     if usar_ejemplo:
         df = inventario_ejemplo()
@@ -1192,14 +971,14 @@ def page_configuracion():
         df = leer_csv(archivo)
     else:
         with col_right:
-            ui("""
-            <div class="empty-box">
-                <div class="empty-title">Inventario pendiente</div>
-                <div class="empty-text">
-                    Sube un archivo CSV o activa el inventario de demostración para continuar.
-                </div>
-            </div>
-            """)
+            st.markdown("""
+<div class="empty-box">
+    <div class="empty-title">Inventario pendiente</div>
+    <div class="empty-text">
+        Sube un archivo CSV o activa el inventario de demostración para continuar.
+    </div>
+</div>
+""", unsafe_allow_html=True)
         return
 
     if df.empty:
@@ -1209,38 +988,22 @@ def page_configuracion():
     columnas = list(df.columns)
 
     with col_right:
-        ui(f"""
-        <div class="card-tight">
-            <div class="label">Archivo cargado</div>
-            <div class="card-title">Inventario detectado</div>
-            <div class="card-text">
-                El archivo contiene <strong>{len(df)}</strong> registros y
-                <strong>{len(columnas)}</strong> columnas.
-            </div>
-        </div>
-        """)
+        with st.container(border=True):
+            st.markdown("### Inventario detectado")
+            st.write(f"El archivo contiene **{len(df)} registros** y **{len(columnas)} columnas**.")
 
-        render_kpis([
-            {"label": "Registros", "value": len(df), "note": "Filas cargadas", "variant": ""},
-            {"label": "Columnas", "value": len(columnas), "note": "Campos disponibles", "variant": "blue"},
-            {"label": "Estado", "value": "Listo", "note": "Pendiente de configurar", "variant": "teal"},
-            {"label": "Formato", "value": "CSV", "note": "Archivo aceptado", "variant": "gold"},
-        ])
+            render_kpis([
+                {"label": "Registros", "value": len(df), "note": "Filas cargadas", "color": ""},
+                {"label": "Columnas", "value": len(columnas), "note": "Campos disponibles", "color": "blue"},
+            ])
 
     with st.expander("Vista previa del inventario", expanded=False):
         st.dataframe(df.head(15), use_container_width=True, hide_index=True, height=340)
 
-    ui("""
-    <div class="divider-blue"></div>
-    <div class="card">
-        <div class="label">Paso 2</div>
-        <div class="card-title">Parámetros del modelo</div>
-        <div class="card-text">
-            Selecciona la columna identificadora, los campos que se compararán
-            y el umbral mínimo de similitud.
-        </div>
-    </div>
-    """)
+    st.markdown('<div class="blue-line"></div>', unsafe_allow_html=True)
+
+    st.markdown("## Parámetros del modelo")
+    st.write("Selecciona la columna identificadora, los campos que se compararán y el umbral mínimo de similitud.")
 
     col_a, col_b = st.columns(2, gap="large")
 
@@ -1275,10 +1038,10 @@ def page_configuracion():
         return
 
     render_kpis([
-        {"label": "Columna ID", "value": columna_id, "note": "Identificador seleccionado", "variant": ""},
-        {"label": "Campos comparados", "value": len(columnas_comparacion), "note": ", ".join(columnas_comparacion[:3]), "variant": "blue"},
-        {"label": "Umbral", "value": f"{umbral}%", "note": "Condición de selección", "variant": "teal"},
-        {"label": "Pares estimados", "value": len(df) * (len(df) - 1) // 2, "note": "n(n−1)/2", "variant": "gold"},
+        {"label": "Columna ID", "value": columna_id, "note": "Identificador seleccionado", "color": ""},
+        {"label": "Campos comparados", "value": len(columnas_comparacion), "note": ", ".join(columnas_comparacion[:3]), "color": "blue"},
+        {"label": "Umbral", "value": f"{umbral}%", "note": "Condición de selección", "color": "teal"},
+        {"label": "Pares estimados", "value": len(df) * (len(df) - 1) // 2, "note": "n(n−1)/2", "color": "gold"},
     ])
 
     if st.button("Guardar configuración y continuar al análisis", use_container_width=True):
@@ -1287,40 +1050,34 @@ def page_configuracion():
         st.session_state["columnas_comparacion"] = columnas_comparacion
         st.session_state["umbral"] = umbral
         st.session_state["resultado"] = None
-        set_page("analisis", "resumen")
-
-
-# ==========================================================
-# 13. PÁGINA ANÁLISIS
-# ==========================================================
-
-def render_view_nav():
-    ui(f"""
-    <div class="view-nav">
-        <a class="{view_class('resumen')}" href="?page=analisis&view=resumen">Resumen</a>
-        <a class="{view_class('pares')}" href="?page=analisis&view=pares">Pares relacionados</a>
-        <a class="{view_class('desglose')}" href="?page=analisis&view=desglose">Desglose</a>
-        <a class="{view_class('descargas')}" href="?page=analisis&view=descargas">Descargas</a>
-    </div>
-    """)
+        st.session_state["page"] = "Análisis y reportes"
+        st.session_state["nav_control"] = "Análisis y reportes"
+        st.session_state["result_view"] = "Resumen"
+        st.session_state["result_control"] = "Resumen"
+        st.session_state["scroll_top"] = True
+        st.rerun()
 
 
 def page_analisis():
     st.title("Análisis y reportes")
 
     if "df" not in st.session_state:
-        ui("""
-        <div class="empty-box">
-            <div class="empty-title">No hay inventario configurado</div>
-            <div class="empty-text">
-                Para ejecutar el análisis primero debes subir un archivo CSV,
-                seleccionar la columna identificadora, escoger las columnas de comparación
-                y guardar la configuración.
-            </div>
-        </div>
-        """)
+        st.markdown("""
+<div class="empty-box">
+    <div class="empty-title">No hay inventario configurado</div>
+    <div class="empty-text">
+        Para ejecutar el análisis primero debes subir un archivo CSV, seleccionar la columna identificadora,
+        escoger las columnas de comparación y guardar la configuración.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
         if st.button("Ir a configuración", use_container_width=True):
-            set_page("configuracion")
+            st.session_state["page"] = "Configuración"
+            st.session_state["nav_control"] = "Configuración"
+            st.session_state["scroll_top"] = True
+            st.rerun()
+
         return
 
     df = st.session_state["df"]
@@ -1328,29 +1085,24 @@ def page_analisis():
     columnas_comparacion = st.session_state["columnas_comparacion"]
     umbral = st.session_state["umbral"]
 
-    ui("""
-    <div class="info-box">
-        Ejecuta el análisis para identificar pares relacionados, grupos de revisión
-        y reportes descargables. El inventario original no se modifica.
-    </div>
-    """)
+    st.markdown("""
+<div class="info-box">
+Ejecuta el análisis para identificar pares relacionados, grupos de revisión y reportes descargables.
+El inventario original no se modifica.
+</div>
+""", unsafe_allow_html=True)
 
     render_kpis([
-        {"label": "Registros cargados", "value": len(df), "note": "Elementos del conjunto", "variant": ""},
-        {"label": "Umbral", "value": f"{umbral}%", "note": "Criterio de selección", "variant": "blue"},
-        {"label": "Columnas comparadas", "value": len(columnas_comparacion), "note": "Proyección aplicada", "variant": "teal"},
-        {"label": "Pares posibles", "value": len(df) * (len(df) - 1) // 2, "note": "Comparación por pares", "variant": "gold"},
+        {"label": "Registros cargados", "value": len(df), "note": "Elementos del conjunto", "color": ""},
+        {"label": "Umbral", "value": f"{umbral}%", "note": "Criterio de selección", "color": "blue"},
+        {"label": "Columnas comparadas", "value": len(columnas_comparacion), "note": "Proyección aplicada", "color": "teal"},
+        {"label": "Pares posibles", "value": len(df) * (len(df) - 1) // 2, "note": "Comparación por pares", "color": "gold"},
     ])
 
-    ui(f"""
-    <div class="card-tight">
-        <div class="label">Configuración activa</div>
-        <div class="card-text">
-            <strong>Columna identificadora:</strong> {escape(str(columna_id))}<br>
-            <strong>Columnas comparadas:</strong> {escape(", ".join(columnas_comparacion))}
-        </div>
-    </div>
-    """)
+    with st.container(border=True):
+        st.markdown("### Configuración activa")
+        st.write(f"**Columna identificadora:** {columna_id}")
+        st.write(f"**Columnas comparadas:** {', '.join(columnas_comparacion)}")
 
     if st.button("Ejecutar análisis", use_container_width=True):
         with st.spinner("Analizando registros y formando grupos de revisión..."):
@@ -1364,15 +1116,15 @@ def page_analisis():
     resultado = st.session_state.get("resultado")
 
     if resultado is None:
-        ui("""
-        <div class="empty-box">
-            <div class="empty-title">Análisis pendiente</div>
-            <div class="empty-text">
-                Presiona el botón “Ejecutar análisis” para generar los pares relacionados,
-                grupos de revisión y reportes descargables.
-            </div>
-        </div>
-        """)
+        st.markdown("""
+<div class="empty-box">
+    <div class="empty-title">Análisis pendiente</div>
+    <div class="empty-text">
+        Presiona el botón “Ejecutar análisis” para generar los pares relacionados,
+        grupos de revisión y reportes descargables.
+    </div>
+</div>
+""", unsafe_allow_html=True)
         return
 
     resumen = resultado["resumen"]
@@ -1384,81 +1136,73 @@ def page_analisis():
     grupos_validos = resultado["grupos_validos"]
     df_trabajo = resultado["df_trabajo"]
 
+    st.markdown('<div class="blue-line"></div>', unsafe_allow_html=True)
     st.markdown("## Resultados generados")
 
     render_kpis([
-        {"label": "Registros analizados", "value": resumen["registros"], "note": "Total revisado", "variant": ""},
-        {"label": "Pares comparados", "value": resumen["pares_comparados"], "note": "Producto cartesiano reducido", "variant": "blue"},
-        {"label": "Pares seleccionados", "value": resumen["pares_detectados"], "note": "Superan el umbral", "variant": "teal"},
-        {"label": "Grupos detectados", "value": resumen["grupos_detectados"], "note": "Revisión recomendada", "variant": "gold"},
+        {"label": "Registros analizados", "value": resumen["registros"], "note": "Total revisado", "color": ""},
+        {"label": "Pares comparados", "value": resumen["pares_comparados"], "note": "Producto cartesiano reducido", "color": "blue"},
+        {"label": "Pares seleccionados", "value": resumen["pares_detectados"], "note": "Superan el umbral", "color": "teal"},
+        {"label": "Grupos detectados", "value": resumen["grupos_detectados"], "note": "Revisión recomendada", "color": "gold"},
     ])
 
-    render_view_nav()
+    selected_view = segmented_control(
+        "Secciones de resultados",
+        ["Resumen", "Pares relacionados", "Desglose", "Descargas"],
+        st.session_state["result_view"],
+        "result_control"
+    )
 
-    view = current_view()
+    if selected_view != st.session_state["result_view"]:
+        st.session_state["result_view"] = selected_view
+        st.session_state["scroll_top"] = False
+        st.rerun()
 
-    if view == "resumen":
-        col_left, col_right = st.columns(2, gap="large")
+    view = st.session_state["result_view"]
 
-        with col_left:
-            ui("""
-            <div class="card">
-                <div class="label">Resultado principal</div>
-                <div class="card-title">Grupos de revisión</div>
-                <div class="card-text">
-                    Cada grupo reúne registros que podrían representar el mismo producto.
-                    La acción sugerida siempre es revisar antes de unificar.
-                </div>
-            </div>
-            """)
-            if tabla_grupos.empty:
-                st.info("No se formaron grupos de revisión con el umbral actual.")
-            else:
-                st.dataframe(tabla_grupos, use_container_width=True, hide_index=True, height=360)
+    if view == "Resumen":
+        st.markdown("### Tabla 1. Grupos de revisión")
+        st.markdown(
+            '<div class="table-note">Muestra los grupos formados por registros relacionados. Cada grupo debe revisarse antes de unificar información.</div>',
+            unsafe_allow_html=True
+        )
 
-        with col_right:
-            ui("""
-            <div class="card">
-                <div class="label">Criterio aplicado</div>
-                <div class="card-title">Control humano</div>
-                <div class="card-text">
-                    El sistema no elimina registros automáticamente. Solo señala posibles
-                    coincidencias para que el responsable valide la información.
-                </div>
-            </div>
-            """)
-            if tabla_pares.empty:
-                st.info("No se detectaron pares relacionados.")
-            else:
-                st.dataframe(tabla_pares.head(12), use_container_width=True, hide_index=True, height=360)
+        if tabla_grupos.empty:
+            st.info("No se formaron grupos de revisión con el umbral actual.")
+        else:
+            st.dataframe(tabla_grupos, use_container_width=True, hide_index=True, height=430)
 
-    elif view == "pares":
-        ui("""
-        <div class="card">
-            <div class="label">Detalle del análisis</div>
-            <div class="card-title">Pares relacionados</div>
-            <div class="card-text">
-                Estos pares cumplen el criterio de selección porque su similitud promedio
-                alcanza o supera el umbral configurado.
-            </div>
-        </div>
-        """)
+        st.markdown('<div class="blue-line"></div>', unsafe_allow_html=True)
+
+        st.markdown("### Tabla 2. Primeros pares relacionados")
+        st.markdown(
+            '<div class="table-note">Muestra una vista rápida de los pares que superaron el umbral de similitud.</div>',
+            unsafe_allow_html=True
+        )
+
+        if tabla_pares.empty:
+            st.info("No se detectaron pares relacionados.")
+        else:
+            st.dataframe(tabla_pares.head(15), use_container_width=True, hide_index=True, height=430)
+
+    elif view == "Pares relacionados":
+        st.markdown("### Pares que cumplen el criterio de selección")
+        st.markdown(
+            '<div class="table-note">Cada fila representa dos registros que alcanzaron o superaron el umbral configurado.</div>',
+            unsafe_allow_html=True
+        )
+
         if tabla_pares.empty:
             st.warning("No se detectaron pares con el umbral seleccionado.")
         else:
-            st.dataframe(tabla_pares, use_container_width=True, hide_index=True, height=560)
+            st.dataframe(tabla_pares, use_container_width=True, hide_index=True, height=620)
 
-    elif view == "desglose":
-        ui("""
-        <div class="card">
-            <div class="label">Auditoría por grupo</div>
-            <div class="card-title">Desglose de similitud</div>
-            <div class="card-text">
-                Selecciona un grupo para revisar sus registros, los pares directos detectados
-                y la comparación campo por campo.
-            </div>
-        </div>
-        """)
+    elif view == "Desglose":
+        st.markdown("### Desglose por grupo")
+        st.markdown(
+            '<div class="table-note">Selecciona un grupo para revisar sus registros, pares directos y comparación campo por campo.</div>',
+            unsafe_allow_html=True
+        )
 
         if tabla_grupos.empty:
             st.info("No hay grupos para desglosar.")
@@ -1477,15 +1221,11 @@ def page_analisis():
             grupo = grupos_validos[numero_grupo - 1]
             nombre_grupo = f"G-{numero_grupo}"
 
-            ui(f"""
-            <div class="card-tight">
-                <div class="label">Grupo seleccionado</div>
-                <div class="card-title">{nombre_grupo}</div>
-                <div class="card-text">
-                    Este grupo contiene {len(grupo)} registros relacionados.
-                </div>
-            </div>
-            """)
+            with st.container(border=True):
+                st.markdown(f"### Grupo seleccionado: {nombre_grupo}")
+                st.write(f"Este grupo contiene **{len(grupo)} registros relacionados**.")
+
+            st.markdown('<div class="blue-line"></div>', unsafe_allow_html=True)
 
             st.markdown("### Registros del grupo")
 
@@ -1503,10 +1243,10 @@ def page_analisis():
                 df_trabajo.loc[grupo, columnas_vista],
                 use_container_width=True,
                 hide_index=True,
-                height=230
+                height=260
             )
 
-            ui('<div class="divider-blue"></div>')
+            st.markdown('<div class="blue-line"></div>', unsafe_allow_html=True)
 
             st.markdown("### Pares directos detectados")
 
@@ -1533,10 +1273,10 @@ def page_analisis():
                     pares_visibles,
                     use_container_width=True,
                     hide_index=True,
-                    height=260
+                    height=290
                 )
 
-                ui('<div class="divider-blue"></div>')
+                st.markdown('<div class="blue-line"></div>', unsafe_allow_html=True)
 
                 opciones = []
 
@@ -1568,68 +1308,71 @@ def page_analisis():
                     detalle,
                     use_container_width=True,
                     hide_index=True,
-                    height=260
+                    height=300
                 )
 
-    elif view == "descargas":
-        ui("""
-        <div class="card">
-            <div class="label">Exportación</div>
-            <div class="card-title">Reportes descargables</div>
-            <div class="card-text">
-                Descarga los resultados para revisarlos fuera de la aplicación.
-                Ningún archivo modifica el inventario original.
-            </div>
-        </div>
-        """)
+    elif view == "Descargas":
+        st.markdown("### Reportes descargables")
+        st.write(
+            "Descarga los resultados para revisarlos fuera de la aplicación. "
+            "Ningún archivo modifica el inventario original."
+        )
 
         d1, d2, d3 = st.columns(3, gap="large")
 
         with d1:
-            st.download_button(
-                label="Reporte completo",
-                data=reporte_completo.to_csv(index=False).encode("utf-8-sig"),
-                file_name="stockmatch_reporte_completo.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
+            with st.container(border=True):
+                st.markdown("#### Reporte completo")
+                st.write("Incluye todos los registros con grupo sugerido, similitud y acción recomendada.")
+                st.download_button(
+                    label="Descargar CSV",
+                    data=reporte_completo.to_csv(index=False).encode("utf-8-sig"),
+                    file_name="stockmatch_reporte_completo.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
 
         with d2:
-            if not tabla_pares.empty:
-                st.download_button(
-                    label="Pares relacionados",
-                    data=tabla_pares.to_csv(index=False).encode("utf-8-sig"),
-                    file_name="stockmatch_pares_relacionados.csv",
-                    mime="text/csv",
-                    use_container_width=True
-                )
-            else:
-                st.info("No hay pares para descargar.")
+            with st.container(border=True):
+                st.markdown("#### Pares relacionados")
+                st.write("Incluye los pares que superaron el umbral de similitud.")
+                if not tabla_pares.empty:
+                    st.download_button(
+                        label="Descargar CSV",
+                        data=tabla_pares.to_csv(index=False).encode("utf-8-sig"),
+                        file_name="stockmatch_pares_relacionados.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
+                else:
+                    st.info("No hay pares para descargar.")
 
         with d3:
-            if not tabla_grupos.empty:
-                st.download_button(
-                    label="Grupos de revisión",
-                    data=tabla_grupos.to_csv(index=False).encode("utf-8-sig"),
-                    file_name="stockmatch_grupos_revision.csv",
-                    mime="text/csv",
-                    use_container_width=True
-                )
-            else:
-                st.info("No hay grupos para descargar.")
+            with st.container(border=True):
+                st.markdown("#### Grupos de revisión")
+                st.write("Incluye los grupos formados por transitividad.")
+                if not tabla_grupos.empty:
+                    st.download_button(
+                        label="Descargar CSV",
+                        data=tabla_grupos.to_csv(index=False).encode("utf-8-sig"),
+                        file_name="stockmatch_grupos_revision.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
+                else:
+                    st.info("No hay grupos para descargar.")
 
 
 # ==========================================================
-# 14. EJECUCIÓN
+# EJECUCIÓN
 # ==========================================================
 
-render_topbar()
+render_header()
+scroll_to_top_if_needed()
 
-page = current_page()
-
-if page == "inicio":
+if st.session_state["page"] == "Inicio":
     page_inicio()
-elif page == "configuracion":
+elif st.session_state["page"] == "Configuración":
     page_configuracion()
 else:
     page_analisis()
