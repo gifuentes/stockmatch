@@ -29,49 +29,7 @@ st.set_page_config(
 
 
 # ==========================================================
-# 2. FUNCIONES DE INTERFAZ
-# ==========================================================
-
-def ui(markup: str):
-    """Renderiza bloques HTML de presentación."""
-    st.markdown(dedent(markup).strip(), unsafe_allow_html=True)
-
-
-def scroll_to_top():
-    """Sube la vista al inicio cuando se cambia de pantalla."""
-    if st.session_state.get("_scroll_top", False):
-        components.html(
-            """
-            <script>
-            setTimeout(function() {
-                try {
-                    window.parent.scrollTo({top: 0, behavior: "smooth"});
-                } catch(e) {}
-            }, 100);
-            </script>
-            """,
-            height=0
-        )
-        st.session_state["_scroll_top"] = False
-
-
-def change_page(page_name: str):
-    """Cambia la pantalla principal sin perder datos guardados."""
-    st.session_state["page"] = page_name
-    st.session_state["_scroll_top"] = True
-
-    if page_name == "Análisis":
-        st.session_state.setdefault("result_view", "Resumen")
-
-
-def change_view(view_name: str):
-    """Cambia la sección interna de resultados."""
-    st.session_state["result_view"] = view_name
-    st.session_state["_scroll_top"] = True
-
-
-# ==========================================================
-# 3. ESTADO INICIAL
+# 2. ESTADO INICIAL
 # ==========================================================
 
 if "page" not in st.session_state:
@@ -83,523 +41,531 @@ if "result_view" not in st.session_state:
 if "resultado" not in st.session_state:
     st.session_state["resultado"] = None
 
+if "_scroll_top" not in st.session_state:
+    st.session_state["_scroll_top"] = False
+
+
+# ==========================================================
+# 3. FUNCIONES DE INTERFAZ
+# ==========================================================
+
+def ui(markup: str):
+    """
+    Renderiza HTML de presentación sin que Streamlit lo muestre como código.
+    """
+    clean = dedent(markup).strip()
+    clean = re.sub(r"\s*\n\s*", " ", clean)
+    clean = re.sub(r">\s+<", "><", clean)
+    st.markdown(clean, unsafe_allow_html=True)
+
+
+def scroll_to_top():
+    if st.session_state.get("_scroll_top", False):
+        components.html(
+            """
+            <script>
+            setTimeout(function() {
+                try { window.parent.scrollTo({top: 0, behavior: "smooth"}); }
+                catch(e) {}
+            }, 80);
+            </script>
+            """,
+            height=0
+        )
+        st.session_state["_scroll_top"] = False
+
+
+def change_page(page_name: str):
+    st.session_state["page"] = page_name
+    st.session_state["_scroll_top"] = True
+
+    if page_name == "Análisis":
+        st.session_state.setdefault("result_view", "Resumen")
+
+
+def change_view(view_name: str):
+    st.session_state["result_view"] = view_name
+    st.session_state["_scroll_top"] = True
+
 
 # ==========================================================
 # 4. ESTILOS VISUALES
 # ==========================================================
 
-ui("""
-<style>
-:root {
-    --navy: #020B1F;
-    --navy2: #061A33;
-    --navy3: #0A2A52;
-    --blue: #123E73;
-    --blue2: #1F5D99;
-    --sky: #EAF2FF;
-    --bg: #F4F7FB;
-    --white: #FFFFFF;
-    --text: #0F172A;
-    --muted: #64748B;
-    --border: #D6E0EF;
-    --teal: #0F766E;
-    --gold: #B7791F;
-    --red: #B42318;
-}
+st.markdown(
+    """
+    <style>
+    :root {
+        --navy: #020B1F;
+        --navy2: #061A33;
+        --blue: #123E73;
+        --sky: #EAF2FF;
+        --bg: #F4F7FB;
+        --white: #FFFFFF;
+        --text: #0F172A;
+        --muted: #64748B;
+        --border: #D6E0EF;
+        --teal: #0F766E;
+        --gold: #B7791F;
+        --red: #B42318;
+    }
 
-.stApp {
-    background: linear-gradient(180deg, #F7FAFE 0%, #EEF4FA 100%);
-    color: var(--text);
-}
+    .stApp {
+        background: linear-gradient(180deg, #F7FAFE 0%, #EEF4FA 100%);
+        color: var(--text);
+    }
 
-.block-container {
-    max-width: 1220px;
-    padding-top: 1.1rem;
-    padding-bottom: 3rem;
-}
+    .block-container {
+        max-width: 1220px;
+        padding-top: 1.1rem;
+        padding-bottom: 3rem;
+    }
 
-section[data-testid="stSidebar"] {
-    display: none !important;
-}
+    section[data-testid="stSidebar"] {
+        display: none !important;
+    }
 
-html, body, [class*="css"] {
-    font-family: "Segoe UI", "Inter", Arial, sans-serif;
-    color: var(--text);
-}
+    html, body, [class*="css"] {
+        font-family: "Segoe UI", "Inter", Arial, sans-serif;
+        color: var(--text);
+    }
 
-h1 {
-    color: var(--navy2) !important;
-    font-size: 2.45rem !important;
-    font-weight: 850 !important;
-    letter-spacing: -0.04em !important;
-}
+    h1 {
+        color: var(--navy2) !important;
+        font-size: 2.45rem !important;
+        font-weight: 850 !important;
+        letter-spacing: -0.04em !important;
+    }
 
-h2 {
-    color: var(--navy2) !important;
-    font-weight: 800 !important;
-    letter-spacing: -0.03em !important;
-}
+    h2 {
+        color: var(--navy2) !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.03em !important;
+    }
 
-h3 {
-    color: var(--navy2) !important;
-    font-weight: 780 !important;
-}
+    h3 {
+        color: var(--navy2) !important;
+        font-weight: 780 !important;
+    }
 
-/* Barra superior */
-.topbar {
-    background: #FFFFFF;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 16px 18px;
-    margin-bottom: 28px;
-    box-shadow: 0 10px 24px rgba(6, 26, 51, 0.07);
-}
+    .topbar {
+        background: #FFFFFF;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 16px 18px;
+        margin-bottom: 28px;
+        box-shadow: 0 10px 24px rgba(6, 26, 51, 0.07);
+    }
 
-.brand-box {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 52px;
-}
+    .brand-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 52px;
+    }
 
-.brand-mark {
-    width: 44px;
-    height: 44px;
-    border-radius: 13px;
-    background: linear-gradient(135deg, var(--navy), var(--blue));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #FFFFFF;
-    font-weight: 900;
-    font-size: 14px;
-}
+    .brand-mark {
+        width: 44px;
+        height: 44px;
+        border-radius: 13px;
+        background: linear-gradient(135deg, var(--navy), var(--blue));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #FFFFFF;
+        font-weight: 900;
+        font-size: 14px;
+    }
 
-.brand-name {
-    font-size: 1.18rem;
-    font-weight: 900;
-    color: var(--navy2);
-    line-height: 1.1;
-}
+    .brand-name {
+        font-size: 1.18rem;
+        font-weight: 900;
+        color: var(--navy2);
+        line-height: 1.1;
+    }
 
-.brand-sub {
-    color: var(--muted);
-    font-size: 0.82rem;
-    margin-top: 3px;
-}
+    .brand-sub {
+        color: var(--muted);
+        font-size: 0.82rem;
+        margin-top: 3px;
+    }
 
-/* Botones de navegación */
-[class*="st-key-nav_"] button {
-    background: #F1F5FB !important;
-    color: var(--navy2) !important;
-    border: 1px solid #D6E0EF !important;
-    border-radius: 14px !important;
-    height: 50px !important;
-    font-weight: 850 !important;
-    box-shadow: none !important;
-}
+    [class*="st-key-nav_"] button {
+        background: #F1F5FB !important;
+        color: var(--navy2) !important;
+        border: 1px solid #D6E0EF !important;
+        border-radius: 14px !important;
+        height: 50px !important;
+        font-weight: 850 !important;
+        box-shadow: none !important;
+    }
 
-[class*="st-key-nav_"] button:hover {
-    background: #EAF2FF !important;
-    border-color: #BBD0EA !important;
-}
+    [class*="st-key-nav_"] button:hover {
+        background: #EAF2FF !important;
+        border-color: #BBD0EA !important;
+    }
 
-[class*="st-key-nav_"][class*="_active"] button {
-    background: var(--navy2) !important;
-    color: #FFFFFF !important;
-    border-color: var(--navy2) !important;
-    box-shadow: 0 8px 18px rgba(6, 26, 51, 0.20) !important;
-}
+    [class*="st-key-nav_"][class*="_active"] button {
+        background: var(--navy2) !important;
+        color: #FFFFFF !important;
+        border-color: var(--navy2) !important;
+        box-shadow: 0 8px 18px rgba(6, 26, 51, 0.20) !important;
+    }
 
-/* Portada */
-.hero {
-    background:
-        radial-gradient(circle at 82% 18%, rgba(31,93,153,0.95) 0%, rgba(6,26,51,0.92) 35%, rgba(2,11,31,1) 100%);
-    border-radius: 28px;
-    color: white;
-    padding: 48px 52px;
-    margin-bottom: 24px;
-    box-shadow: 0 22px 50px rgba(2, 11, 31, 0.24);
-}
+    .hero {
+        background:
+            radial-gradient(circle at 82% 18%, rgba(31,93,153,0.95) 0%, rgba(6,26,51,0.92) 35%, rgba(2,11,31,1) 100%);
+        border-radius: 28px;
+        color: white;
+        padding: 48px 52px;
+        margin-bottom: 24px;
+        box-shadow: 0 22px 50px rgba(2, 11, 31, 0.24);
+    }
 
-.hero-grid {
-    display: grid;
-    grid-template-columns: 1.35fr 0.85fr;
-    gap: 36px;
-    align-items: center;
-}
+    .hero-grid {
+        display: grid;
+        grid-template-columns: 1.35fr 0.85fr;
+        gap: 36px;
+        align-items: center;
+    }
 
-.hero-pill {
-    display: inline-block;
-    padding: 8px 15px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.10);
-    border: 1px solid rgba(255,255,255,0.22);
-    color: #D8E9FF;
-    font-size: 0.78rem;
-    font-weight: 850;
-    text-transform: uppercase;
-    letter-spacing: 0.13em;
-    margin-bottom: 18px;
-}
-
-.hero-title {
-    font-size: 3.65rem;
-    font-weight: 950;
-    letter-spacing: -0.065em;
-    line-height: 1.0;
-    margin-bottom: 14px;
-}
-
-.hero-text {
-    font-size: 1.04rem;
-    line-height: 1.75;
-    color: #E5F0FF;
-    max-width: 790px;
-}
-
-.hero-panel {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 22px;
-    padding: 24px;
-}
-
-.hero-panel-title {
-    color: #FFFFFF;
-    font-weight: 850;
-    font-size: 1.05rem;
-    margin-bottom: 16px;
-}
-
-.flow-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 15px;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-    color: #EAF2FF;
-    font-weight: 760;
-    font-size: 0.93rem;
-}
-
-.flow-tag {
-    color: #A7D3FF;
-    font-weight: 950;
-}
-
-/* Tarjetas */
-.card {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    padding: 26px 28px;
-    margin-bottom: 22px;
-    box-shadow: 0 10px 26px rgba(6, 26, 51, 0.07);
-}
-
-.card-tight {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 22px 24px;
-    margin-bottom: 18px;
-    box-shadow: 0 8px 20px rgba(6, 26, 51, 0.055);
-}
-
-.label {
-    color: var(--muted);
-    font-size: 0.76rem;
-    text-transform: uppercase;
-    letter-spacing: 0.13em;
-    font-weight: 900;
-    margin-bottom: 8px;
-}
-
-.card-title {
-    color: var(--navy2);
-    font-size: 1.35rem;
-    font-weight: 900;
-    letter-spacing: -0.04em;
-    margin-bottom: 8px;
-}
-
-.card-text {
-    color: #334155;
-    font-size: 0.98rem;
-    line-height: 1.68;
-}
-
-/* Métricas */
-.kpi-row {
-    display: grid;
-    gap: 16px;
-    margin: 18px 0 24px;
-}
-
-.kpi-row.cols-4 {
-    grid-template-columns: repeat(4, 1fr);
-}
-
-.kpi-row.cols-3 {
-    grid-template-columns: repeat(3, 1fr);
-}
-
-.kpi-row.cols-2 {
-    grid-template-columns: repeat(2, 1fr);
-}
-
-.kpi {
-    background: #FFFFFF;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 9px 22px rgba(6, 26, 51, 0.07);
-    min-height: 118px;
-    border-top: 6px solid var(--navy2);
-}
-
-.kpi.blue { border-top-color: var(--blue); }
-.kpi.teal { border-top-color: var(--teal); }
-.kpi.gold { border-top-color: var(--gold); }
-.kpi.red { border-top-color: var(--red); }
-
-.kpi-label {
-    color: var(--muted);
-    font-size: 0.78rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 10px;
-}
-
-.kpi-value {
-    color: var(--navy2);
-    font-size: 1.88rem;
-    font-weight: 950;
-    letter-spacing: -0.055em;
-    line-height: 1.04;
-    word-break: break-word;
-}
-
-.kpi-note {
-    color: #64748B;
-    font-size: 0.84rem;
-    margin-top: 9px;
-    line-height: 1.4;
-}
-
-/* Pasos */
-.step-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-}
-
-.step-card {
-    background: #FFFFFF;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 22px;
-    min-height: 162px;
-    box-shadow: 0 8px 20px rgba(6, 26, 51, 0.055);
-}
-
-.step-num {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    background: var(--navy2);
-    color: #FFFFFF;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 950;
-    margin-bottom: 14px;
-}
-
-.step-title {
-    font-size: 1.05rem;
-    color: var(--navy2);
-    font-weight: 900;
-    margin-bottom: 8px;
-}
-
-.step-text {
-    color: var(--muted);
-    line-height: 1.6;
-    font-size: 0.92rem;
-}
-
-/* Mensajes */
-.info-box {
-    background: #EAF2FF;
-    border: 1px solid #C7D9F0;
-    border-left: 6px solid var(--blue);
-    border-radius: 18px;
-    padding: 16px 18px;
-    margin-bottom: 20px;
-    color: #1E293B;
-    line-height: 1.65;
-}
-
-.empty-box {
-    background: #FFFFFF;
-    border: 1px dashed #9DB8D8;
-    border-radius: 22px;
-    padding: 36px 30px;
-    text-align: center;
-    margin: 0;
-}
-
-.empty-title {
-    color: var(--navy2);
-    font-weight: 900;
-    font-size: 1.55rem;
-    margin-bottom: 8px;
-}
-
-.empty-text {
-    color: var(--muted);
-    line-height: 1.65;
-    max-width: 680px;
-    margin: 0 auto;
-}
-
-/* Botones internos de resultados */
-[class*="st-key-view_"] button {
-    background: #F1F5FB !important;
-    color: var(--navy2) !important;
-    border: 1px solid #D6E0EF !important;
-    border-radius: 14px !important;
-    height: 50px !important;
-    font-weight: 850 !important;
-    box-shadow: none !important;
-}
-
-[class*="st-key-view_"] button:hover {
-    background: #EAF2FF !important;
-    border-color: #BBD0EA !important;
-}
-
-[class*="st-key-view_"][class*="_active"] button {
-    background: var(--navy2) !important;
-    color: #FFFFFF !important;
-    border-color: var(--navy2) !important;
-    box-shadow: 0 8px 18px rgba(6, 26, 51, 0.20) !important;
-}
-
-/* Botones principales */
-.st-key-main_start button,
-.st-key-save_config button,
-.st-key-run_analysis button,
-.st-key-go_config_empty button {
-    background: var(--navy2) !important;
-    color: white !important;
-    border-radius: 13px !important;
-    border: none !important;
-    font-weight: 850 !important;
-    height: 50px !important;
-}
-
-.st-key-main_start button:hover,
-.st-key-save_config button:hover,
-.st-key-run_analysis button:hover,
-.st-key-go_config_empty button:hover {
-    background: var(--blue) !important;
-}
-
-/* Descargas */
-div.stDownloadButton > button {
-    background: var(--navy2) !important;
-    color: white !important;
-    border-radius: 13px !important;
-    border: none !important;
-    font-weight: 850 !important;
-    min-height: 52px !important;
-    white-space: normal !important;
-}
-
-div.stDownloadButton > button:hover {
-    background: var(--blue) !important;
-}
-
-/* Separadores */
-.divider-blue {
-    height: 5px;
-    background: linear-gradient(90deg, var(--navy2), var(--blue), transparent);
-    border-radius: 999px;
-    margin: 26px 0 22px;
-}
-
-.divider-thin {
-    height: 1px;
-    background: #C9D6E8;
-    margin: 22px 0;
-}
-
-/* Inputs */
-div[data-testid="stFileUploader"] {
-    background: #FFFFFF;
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 14px;
-}
-
-div[data-baseweb="select"] > div {
-    border-radius: 14px !important;
-    border-color: #B8CCE5 !important;
-    min-height: 48px;
-}
-
-.stDataFrame {
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    background: #FFFFFF;
-}
-
-div[data-testid="stExpander"] {
-    background: #FFFFFF;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    margin-bottom: 14px;
-}
-
-.table-title {
-    font-size: 1.25rem;
-    color: var(--navy2);
-    font-weight: 900;
-    margin: 12px 0 8px;
-}
-
-.table-help {
-    color: var(--muted);
-    font-size: 0.94rem;
-    line-height: 1.6;
-    margin-bottom: 10px;
-}
-
-/* Responsive */
-@media (max-width: 980px) {
-    .hero-grid,
-    .kpi-row.cols-4,
-    .kpi-row.cols-3,
-    .kpi-row.cols-2,
-    .step-row {
-        grid-template-columns: 1fr;
+    .hero-pill {
+        display: inline-block;
+        padding: 8px 15px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.10);
+        border: 1px solid rgba(255,255,255,0.22);
+        color: #D8E9FF;
+        font-size: 0.78rem;
+        font-weight: 850;
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+        margin-bottom: 18px;
     }
 
     .hero-title {
-        font-size: 2.55rem;
+        font-size: 3.65rem;
+        font-weight: 950;
+        letter-spacing: -0.065em;
+        line-height: 1.0;
+        margin-bottom: 14px;
     }
-}
-</style>
-""")
+
+    .hero-text {
+        font-size: 1.04rem;
+        line-height: 1.75;
+        color: #E5F0FF;
+        max-width: 790px;
+    }
+
+    .hero-panel {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 22px;
+        padding: 24px;
+    }
+
+    .hero-panel-title {
+        color: #FFFFFF;
+        font-weight: 850;
+        font-size: 1.05rem;
+        margin-bottom: 16px;
+    }
+
+    .flow-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 15px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        color: #EAF2FF;
+        font-weight: 760;
+        font-size: 0.93rem;
+    }
+
+    .flow-tag {
+        color: #A7D3FF;
+        font-weight: 950;
+    }
+
+    .card {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 26px 28px;
+        margin-bottom: 22px;
+        box-shadow: 0 10px 26px rgba(6, 26, 51, 0.07);
+    }
+
+    .card-tight {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 22px 24px;
+        margin-bottom: 18px;
+        box-shadow: 0 8px 20px rgba(6, 26, 51, 0.055);
+    }
+
+    .label {
+        color: var(--muted);
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+        font-weight: 900;
+        margin-bottom: 8px;
+    }
+
+    .card-title {
+        color: var(--navy2);
+        font-size: 1.35rem;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        margin-bottom: 8px;
+    }
+
+    .card-text {
+        color: #334155;
+        font-size: 0.98rem;
+        line-height: 1.68;
+    }
+
+    .kpi-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 9px 22px rgba(6, 26, 51, 0.07);
+        min-height: 118px;
+        border-top: 6px solid var(--navy2);
+        margin-bottom: 16px;
+    }
+
+    .kpi-card.blue { border-top-color: var(--blue); }
+    .kpi-card.teal { border-top-color: var(--teal); }
+    .kpi-card.gold { border-top-color: var(--gold); }
+    .kpi-card.red { border-top-color: var(--red); }
+
+    .kpi-label {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 10px;
+    }
+
+    .kpi-value {
+        color: var(--navy2);
+        font-size: 1.88rem;
+        font-weight: 950;
+        letter-spacing: -0.055em;
+        line-height: 1.04;
+        word-break: break-word;
+    }
+
+    .kpi-note {
+        color: #64748B;
+        font-size: 0.84rem;
+        margin-top: 9px;
+        line-height: 1.4;
+    }
+
+    .step-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+
+    .step-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 22px;
+        min-height: 162px;
+        box-shadow: 0 8px 20px rgba(6, 26, 51, 0.055);
+    }
+
+    .step-num {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        background: var(--navy2);
+        color: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 950;
+        margin-bottom: 14px;
+    }
+
+    .step-title {
+        font-size: 1.05rem;
+        color: var(--navy2);
+        font-weight: 900;
+        margin-bottom: 8px;
+    }
+
+    .step-text {
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 0.92rem;
+    }
+
+    .info-box {
+        background: #EAF2FF;
+        border: 1px solid #C7D9F0;
+        border-left: 6px solid var(--blue);
+        border-radius: 18px;
+        padding: 16px 18px;
+        margin-bottom: 20px;
+        color: #1E293B;
+        line-height: 1.65;
+    }
+
+    .empty-box {
+        background: #FFFFFF;
+        border: 1px dashed #9DB8D8;
+        border-radius: 22px;
+        padding: 36px 30px;
+        text-align: center;
+        margin: 0;
+    }
+
+    .empty-title {
+        color: var(--navy2);
+        font-weight: 900;
+        font-size: 1.55rem;
+        margin-bottom: 8px;
+    }
+
+    .empty-text {
+        color: var(--muted);
+        line-height: 1.65;
+        max-width: 680px;
+        margin: 0 auto;
+    }
+
+    [class*="st-key-view_"] button {
+        background: #F1F5FB !important;
+        color: var(--navy2) !important;
+        border: 1px solid #D6E0EF !important;
+        border-radius: 14px !important;
+        height: 50px !important;
+        font-weight: 850 !important;
+        box-shadow: none !important;
+    }
+
+    [class*="st-key-view_"] button:hover {
+        background: #EAF2FF !important;
+        border-color: #BBD0EA !important;
+    }
+
+    [class*="st-key-view_"][class*="_active"] button {
+        background: var(--navy2) !important;
+        color: #FFFFFF !important;
+        border-color: var(--navy2) !important;
+        box-shadow: 0 8px 18px rgba(6, 26, 51, 0.20) !important;
+    }
+
+    .st-key-main_start button,
+    .st-key-save_config button,
+    .st-key-run_analysis button,
+    .st-key-go_config_empty button {
+        background: var(--navy2) !important;
+        color: white !important;
+        border-radius: 13px !important;
+        border: none !important;
+        font-weight: 850 !important;
+        height: 50px !important;
+    }
+
+    .st-key-main_start button:hover,
+    .st-key-save_config button:hover,
+    .st-key-run_analysis button:hover,
+    .st-key-go_config_empty button:hover {
+        background: var(--blue) !important;
+    }
+
+    div.stDownloadButton > button {
+        background: var(--navy2) !important;
+        color: white !important;
+        border-radius: 13px !important;
+        border: none !important;
+        font-weight: 850 !important;
+        min-height: 52px !important;
+        white-space: normal !important;
+    }
+
+    div.stDownloadButton > button:hover {
+        background: var(--blue) !important;
+    }
+
+    .divider-blue {
+        height: 5px;
+        background: linear-gradient(90deg, var(--navy2), var(--blue), transparent);
+        border-radius: 999px;
+        margin: 26px 0 22px;
+    }
+
+    div[data-testid="stFileUploader"] {
+        background: #FFFFFF;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 14px;
+    }
+
+    div[data-baseweb="select"] > div {
+        border-radius: 14px !important;
+        border-color: #B8CCE5 !important;
+        min-height: 48px;
+    }
+
+    .stDataFrame {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        background: #FFFFFF;
+    }
+
+    div[data-testid="stExpander"] {
+        background: #FFFFFF;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 14px;
+    }
+
+    .table-title {
+        font-size: 1.25rem;
+        color: var(--navy2);
+        font-weight: 900;
+        margin: 12px 0 8px;
+    }
+
+    .table-help {
+        color: var(--muted);
+        font-size: 0.94rem;
+        line-height: 1.6;
+        margin-bottom: 10px;
+    }
+
+    @media (max-width: 980px) {
+        .hero-grid,
+        .step-row {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-title {
+            font-size: 2.55rem;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # ==========================================================
@@ -608,7 +574,15 @@ div[data-testid="stExpander"] {
 
 def nav_key(page_name: str):
     active = st.session_state["page"] == page_name
-    clean = page_name.lower().replace("á", "a").replace(" ", "_")
+    clean = (
+        page_name.lower()
+        .replace("á", "a")
+        .replace("é", "e")
+        .replace("í", "i")
+        .replace("ó", "o")
+        .replace("ú", "u")
+        .replace(" ", "_")
+    )
     return f"nav_{clean}_{'active' if active else 'inactive'}"
 
 
@@ -619,66 +593,62 @@ def view_key(view_name: str):
 
 
 def render_topbar():
-    with st.container():
-        ui('<div class="topbar">')
-        col_brand, col_1, col_2, col_3 = st.columns([3.8, 1.15, 1.45, 1.7], gap="small")
+    ui('<div class="topbar"></div>')
 
-        with col_brand:
-            ui("""
-            <div class="brand-box">
-                <div class="brand-mark">SM</div>
-                <div>
-                    <div class="brand-name">StockMatch</div>
-                    <div class="brand-sub">Auditoría de inventarios no estructurados</div>
-                </div>
+    col_brand, col_1, col_2, col_3 = st.columns([3.8, 1.15, 1.45, 1.7], gap="small")
+
+    with col_brand:
+        ui("""
+        <div class="brand-box">
+            <div class="brand-mark">SM</div>
+            <div>
+                <div class="brand-name">StockMatch</div>
+                <div class="brand-sub">Auditoría de inventarios no estructurados</div>
             </div>
-            """)
+        </div>
+        """)
 
-        with col_1:
-            if st.button("Inicio", use_container_width=True, key=nav_key("Inicio")):
-                change_page("Inicio")
-                st.rerun()
+    with col_1:
+        if st.button("Inicio", use_container_width=True, key=nav_key("Inicio")):
+            change_page("Inicio")
+            st.rerun()
 
-        with col_2:
-            if st.button("Configuración", use_container_width=True, key=nav_key("Configuración")):
-                change_page("Configuración")
-                st.rerun()
+    with col_2:
+        if st.button("Configuración", use_container_width=True, key=nav_key("Configuración")):
+            change_page("Configuración")
+            st.rerun()
 
-        with col_3:
-            if st.button("Análisis y reportes", use_container_width=True, key=nav_key("Análisis")):
-                change_page("Análisis")
-                st.session_state["result_view"] = "Resumen"
-                st.rerun()
-
-        ui('</div>')
+    with col_3:
+        if st.button("Análisis y reportes", use_container_width=True, key=nav_key("Análisis")):
+            change_page("Análisis")
+            st.session_state["result_view"] = "Resumen"
+            st.rerun()
 
     scroll_to_top()
 
 
 # ==========================================================
-# 6. TARJETAS KPI
+# 6. KPI SEGUROS SIN HTML DINÁMICO IMPRESO COMO CÓDIGO
 # ==========================================================
 
 def render_kpis(items, columns=4):
-    cards = []
+    cols = st.columns(columns, gap="medium")
 
-    for item in items:
+    for col, item in zip(cols, items):
         variant = escape(str(item.get("variant", "")))
         label = escape(str(item.get("label", "")))
         value = escape(str(item.get("value", "")))
         note = escape(str(item.get("note", "")))
 
-        cards.append(
-            f"""
-            <div class="kpi {variant}">
-                <div class="kpi-label">{label}</div>
-                <div class="kpi-value">{value}</div>
-                <div class="kpi-note">{note}</div>
-            </div>
-            """
-        )
-
-    ui(f'<div class="kpi-row cols-{columns}">' + "".join(cards) + '</div>')
+        with col:
+            st.markdown(
+                f'<div class="kpi-card {variant}">'
+                f'<div class="kpi-label">{label}</div>'
+                f'<div class="kpi-value">{value}</div>'
+                f'<div class="kpi-note">{note}</div>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
 
 
 # ==========================================================
@@ -686,22 +656,15 @@ def render_kpis(items, columns=4):
 # ==========================================================
 
 def normalizar_texto(valor) -> str:
-    """
-    Normaliza un texto para compararlo.
-    Ejemplo: 'Coca-Cola 500 ML' -> 'coca cola 500 ml'.
-    """
-
     if pd.isna(valor):
         return ""
 
     texto = str(valor).strip().lower()
-
     texto = unicodedata.normalize("NFD", texto)
     texto = "".join(
         caracter for caracter in texto
         if unicodedata.category(caracter) != "Mn"
     )
-
     texto = re.sub(r"[^a-z0-9\s]", " ", texto)
     texto = re.sub(r"\s+", " ", texto).strip()
 
@@ -709,8 +672,6 @@ def normalizar_texto(valor) -> str:
 
 
 def similitud_textual(valor_a, valor_b) -> float:
-    """Calcula similitud textual entre dos valores y devuelve porcentaje."""
-
     texto_a = normalizar_texto(valor_a)
     texto_b = normalizar_texto(valor_b)
 
@@ -732,16 +693,11 @@ def clasificar_confianza(similitud: float) -> str:
 
 
 def comparar_dos_registros(fila_a, fila_b, columnas_comparacion):
-    """
-    Compara dos registros campo por campo.
-    """
-
     detalle = []
 
     for columna in columnas_comparacion:
         valor_a = fila_a[columna]
         valor_b = fila_b[columna]
-
         similitud = similitud_textual(valor_a, valor_b)
 
         detalle.append({
@@ -777,11 +733,6 @@ def comparar_dos_registros(fila_a, fila_b, columnas_comparacion):
 # ==========================================================
 
 class UnionFind:
-    """
-    Agrupa registros relacionados directa o indirectamente.
-    Esto representa la transitividad.
-    """
-
     def __init__(self, elementos):
         self.padre = {elemento: elemento for elemento in elementos}
 
@@ -812,11 +763,6 @@ class UnionFind:
 # ==========================================================
 
 def analizar_inventario(df, columna_id, columnas_comparacion, umbral):
-    """
-    Aplica el análisis de posibles duplicados:
-    conjunto, proyección, comparación de pares, selección y agrupación.
-    """
-
     df_trabajo = df.copy().reset_index(drop=True)
     indices = list(df_trabajo.index)
 
@@ -1390,8 +1336,7 @@ def page_analisis():
             <div class="card-title">Resumen del análisis</div>
             <div class="card-text">
                 Esta sección muestra los grupos detectados y una vista previa de los pares
-                que superaron el umbral de similitud. Para revisar todos los datos, usa las
-                secciones Grupos, Pares o Desglose.
+                que superaron el umbral de similitud.
             </div>
         </div>
         """)
