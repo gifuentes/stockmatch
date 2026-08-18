@@ -50,9 +50,7 @@ if "_scroll_top" not in st.session_state:
 # ==========================================================
 
 def ui(markup: str):
-    """
-    Renderiza HTML de presentación sin que Streamlit lo muestre como código.
-    """
+    """Renderiza HTML de presentación sin que Streamlit lo muestre como código."""
     clean = dedent(markup).strip()
     clean = re.sub(r"\s*\n\s*", " ", clean)
     clean = re.sub(r">\s+<", "><", clean)
@@ -60,6 +58,7 @@ def ui(markup: str):
 
 
 def scroll_to_top():
+    """Sube al inicio después de cambiar de pantalla."""
     if st.session_state.get("_scroll_top", False):
         components.html(
             """
@@ -76,6 +75,7 @@ def scroll_to_top():
 
 
 def change_page(page_name: str):
+    """Cambia de pantalla sin perder la configuración guardada."""
     st.session_state["page"] = page_name
     st.session_state["_scroll_top"] = True
 
@@ -84,8 +84,21 @@ def change_page(page_name: str):
 
 
 def change_view(view_name: str):
+    """Cambia la sección interna del análisis."""
     st.session_state["result_view"] = view_name
     st.session_state["_scroll_top"] = True
+
+
+def altura_tabla(df, minimo=150, maximo=430):
+    """
+    Calcula una altura adecuada para evitar filas vacías grandes.
+    """
+    if df is None or df.empty:
+        return minimo
+
+    filas = len(df)
+    altura = 44 + filas * 36
+    return max(minimo, min(altura, maximo))
 
 
 # ==========================================================
@@ -135,6 +148,7 @@ st.markdown(
         font-size: 2.45rem !important;
         font-weight: 850 !important;
         letter-spacing: -0.04em !important;
+        margin-bottom: 0.6rem !important;
     }
 
     h2 {
@@ -148,20 +162,23 @@ st.markdown(
         font-weight: 780 !important;
     }
 
-    .topbar {
-        background: #FFFFFF;
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 16px 18px;
-        margin-bottom: 28px;
-        box-shadow: 0 10px 24px rgba(6, 26, 51, 0.07);
+    .top-separator {
+        height: 5px;
+        background: linear-gradient(90deg, #061A33, #123E73, transparent);
+        border-radius: 999px;
+        margin: 18px 0 28px;
     }
 
     .brand-box {
         display: flex;
         align-items: center;
         gap: 12px;
-        min-height: 52px;
+        min-height: 54px;
+        background: #FFFFFF;
+        border: 1px solid #D6E0EF;
+        border-radius: 18px;
+        padding: 12px 16px;
+        box-shadow: 0 8px 20px rgba(6, 26, 51, 0.06);
     }
 
     .brand-mark {
@@ -195,9 +212,9 @@ st.markdown(
         color: var(--navy2) !important;
         border: 1px solid #D6E0EF !important;
         border-radius: 14px !important;
-        height: 50px !important;
+        height: 54px !important;
         font-weight: 850 !important;
-        box-shadow: none !important;
+        box-shadow: 0 6px 14px rgba(6, 26, 51, 0.04) !important;
     }
 
     [class*="st-key-nav_"] button:hover {
@@ -359,10 +376,10 @@ st.markdown(
 
     .kpi-value {
         color: var(--navy2);
-        font-size: 1.88rem;
+        font-size: 1.72rem;
         font-weight: 950;
         letter-spacing: -0.055em;
-        line-height: 1.04;
+        line-height: 1.05;
         word-break: break-word;
     }
 
@@ -569,7 +586,7 @@ st.markdown(
 
 
 # ==========================================================
-# 5. BARRA SUPERIOR
+# 5. NAVEGACIÓN SUPERIOR
 # ==========================================================
 
 def nav_key(page_name: str):
@@ -593,8 +610,6 @@ def view_key(view_name: str):
 
 
 def render_topbar():
-    ui('<div class="topbar"></div>')
-
     col_brand, col_1, col_2, col_3 = st.columns([3.8, 1.15, 1.45, 1.7], gap="small")
 
     with col_brand:
@@ -624,11 +639,13 @@ def render_topbar():
             st.session_state["result_view"] = "Resumen"
             st.rerun()
 
+    ui('<div class="top-separator"></div>')
+
     scroll_to_top()
 
 
 # ==========================================================
-# 6. KPI SEGUROS SIN HTML DINÁMICO IMPRESO COMO CÓDIGO
+# 6. KPI
 # ==========================================================
 
 def render_kpis(items, columns=4):
@@ -1028,7 +1045,7 @@ def page_inicio():
     """)
 
     render_kpis([
-        {"label": "Datos originales", "value": "Sin cambios", "note": "La app no elimina registros.", "variant": ""},
+        {"label": "Datos originales", "value": "0 cambios", "note": "La app no elimina registros.", "variant": ""},
         {"label": "Control de decisión", "value": "Humano", "note": "El usuario valida cada grupo.", "variant": "blue"},
         {"label": "Salida principal", "value": "CSV", "note": "Reportes listos para revisar.", "variant": "teal"},
         {"label": "Modelo aplicado", "value": "π × σ", "note": "Álgebra relacional.", "variant": "gold"},
@@ -1154,7 +1171,13 @@ def page_configuracion():
         ], columns=2)
 
     with st.expander("Vista previa del inventario", expanded=False):
-        st.dataframe(df.head(15), use_container_width=True, hide_index=True, height=340)
+        vista = df.head(15)
+        st.dataframe(
+            vista,
+            use_container_width=True,
+            hide_index=True,
+            height=altura_tabla(vista, maximo=360)
+        )
 
     ui("""
     <div class="divider-blue"></div>
@@ -1359,7 +1382,12 @@ def page_analisis():
                     "Acción sugerida"
                 ]
             ]
-            st.dataframe(tabla_resumen, use_container_width=True, hide_index=True, height=360)
+            st.dataframe(
+                tabla_resumen,
+                use_container_width=True,
+                hide_index=True,
+                height=altura_tabla(tabla_resumen, maximo=360)
+            )
 
         ui('<div class="divider-blue"></div>')
 
@@ -1372,7 +1400,13 @@ def page_analisis():
         if tabla_pares.empty:
             st.info("No se detectaron pares relacionados.")
         else:
-            st.dataframe(tabla_pares.head(12), use_container_width=True, hide_index=True, height=360)
+            vista_pares = tabla_pares.head(12)
+            st.dataframe(
+                vista_pares,
+                use_container_width=True,
+                hide_index=True,
+                height=altura_tabla(vista_pares, maximo=360)
+            )
 
     elif view == "Grupos":
         ui("""
@@ -1389,7 +1423,12 @@ def page_analisis():
         if tabla_grupos.empty:
             st.info("No se formaron grupos de revisión.")
         else:
-            st.dataframe(tabla_grupos, use_container_width=True, hide_index=True, height=560)
+            st.dataframe(
+                tabla_grupos,
+                use_container_width=True,
+                hide_index=True,
+                height=altura_tabla(tabla_grupos, maximo=430)
+            )
 
     elif view == "Pares":
         ui("""
@@ -1406,7 +1445,12 @@ def page_analisis():
         if tabla_pares.empty:
             st.warning("No se detectaron pares con el umbral seleccionado.")
         else:
-            st.dataframe(tabla_pares, use_container_width=True, hide_index=True, height=600)
+            st.dataframe(
+                tabla_pares,
+                use_container_width=True,
+                hide_index=True,
+                height=altura_tabla(tabla_pares, maximo=500)
+            )
 
     elif view == "Desglose":
         ui("""
@@ -1459,11 +1503,13 @@ def page_analisis():
                 if columna in df_trabajo.columns
             ]
 
+            tabla_registros_grupo = df_trabajo.loc[grupo, columnas_vista]
+
             st.dataframe(
-                df_trabajo.loc[grupo, columnas_vista],
+                tabla_registros_grupo,
                 use_container_width=True,
                 hide_index=True,
-                height=240
+                height=altura_tabla(tabla_registros_grupo, maximo=260)
             )
 
             ui('<div class="divider-blue"></div>')
@@ -1493,7 +1539,7 @@ def page_analisis():
                     pares_visibles,
                     use_container_width=True,
                     hide_index=True,
-                    height=280
+                    height=altura_tabla(pares_visibles, maximo=300)
                 )
 
                 ui('<div class="divider-blue"></div>')
@@ -1529,7 +1575,7 @@ def page_analisis():
                     detalle,
                     use_container_width=True,
                     hide_index=True,
-                    height=280
+                    height=altura_tabla(detalle, maximo=300)
                 )
 
     elif view == "Descargas":
